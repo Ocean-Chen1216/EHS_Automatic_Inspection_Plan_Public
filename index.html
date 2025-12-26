@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>聚陽實業 - 自動檢查計畫總表 - v1.12.26</title>
+    <title>聚陽實業 - 自動檢查計畫總表</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0d6efd">
@@ -40,6 +40,9 @@
         .print-note { padding: 5px; border-bottom: 1px solid #000; font-size: 10pt; background-color: #fff; }
         .print-img-box { text-align: center; padding: 5px; }
         .print-img { max-height: 180px; max-width: 95%; object-fit: contain; }
+        
+        /* Version Info Style */
+        .version-tag { font-size: 0.75rem; color: #6c757d; display: block; text-align: center; margin-top: -5px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -51,7 +54,9 @@
 
 <div class="container mb-5">
     <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded" style="z-index: 1000;">
-        <h4 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表 - v1.12.26</h4>
+        <h4 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表</h4>
+        <span class="version-tag">Ver: v251226</span>
+        
         <div class="progress mt-2" style="height: 5px;">
             <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
         </div>
@@ -119,6 +124,7 @@
         <div style="text-align: right; font-size: 11pt; border-bottom: 2px solid #000; padding-bottom: 5px;">
             <strong>檢查時間：</strong><span id="printDate"></span> &nbsp;|&nbsp; <strong>檢查人員：</strong><span id="printInspector"></span>
         </div>
+        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v251226</div>
     </div>
     <div id="printItemsContainer"></div>
 </div>
