@@ -22,57 +22,44 @@
         .panel-row { background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 5px solid #ccc; transition: all 0.3s; }
         .panel-row.completed { border-left-color: #198754; } 
         
-        /* 檢查細項 (重要修改: Grid 排版) */
+        /* 檢查細項 (Grid 排版 - 強制右側按鈕不換行) */
         .sub-item-row { 
             display: grid; 
-            grid-template-columns: 1fr auto; /* 左邊文字自動，右邊按鈕固定 */
+            grid-template-columns: 1fr auto; 
             gap: 10px; 
             align-items: center; 
             border-bottom: 1px solid #f0f0f0; 
-            padding: 10px 0; 
+            padding: 12px 0; 
         }
         .sub-item-row:last-child { border-bottom: none; }
         
-        /* 文字區域 */
         .sub-item-label { font-size: 0.95rem; color: #333; line-height: 1.4; }
         
-        /* 按鈕區域固定寬度，防止跑版 */
-        .sub-item-btn-group { width: 140px; flex-shrink: 0; }
+        /* 按鈕群組強制設定 */
+        .sub-item-btn-group { width: 150px; flex-shrink: 0; }
+        .btn-check-group { display: flex; width: 100%; }
+        .btn-check-group .btn { 
+            flex: 1; 
+            white-space: nowrap; /* 禁止文字斷行 */
+            padding: 0.375rem 0.2rem; /* 縮小內距確保塞得下 */
+            display: flex; align-items: center; justify-content: center;
+        }
         
         .preview-img { max-width: 100%; height: 200px; object-fit: contain; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; display: none; background-color: #f8f9fa;}
         .required-star { color: red; }
         
-        /* 模組標籤優化 (禁止斷行與擠壓) */
         .badge-type { 
-            font-size: 0.75em; 
-            background-color: #6c757d; 
-            color: white; 
-            padding: 3px 8px; 
-            border-radius: 4px; 
-            margin-left: 8px; 
-            vertical-align: middle;
-            white-space: nowrap; /* 禁止文字斷行 */
-            flex-shrink: 0;      /* 禁止被擠壓 */
+            font-size: 0.75em; background-color: #6c757d; color: white; 
+            padding: 3px 8px; border-radius: 4px; margin-left: 8px; 
+            vertical-align: middle; white-space: nowrap; flex-shrink: 0; 
         }
         
-        /* 浮動按鈕 */
         .fab-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .fab-btn { box-shadow: 0 4px 6px rgba(0,0,0,0.2); border-radius: 50px; padding: 12px 20px; font-weight: bold; font-size: 0.9em; }
         
-        /* 備份按鈕區優化 (Flexbox) */
-        .backup-controls { 
-            margin-bottom: 15px; 
-            background: #e9ecef; 
-            padding: 10px; 
-            border-radius: 8px; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-        }
-        
+        .backup-controls { margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
         .version-tag { font-size: 0.75rem; color: #6c757d; display: block; text-align: center; margin-top: -5px; margin-bottom: 5px; }
 
-        /* PDF Styles */
         #printArea { position: absolute; top: -9999px; left: -9999px; width: 210mm; padding: 10mm; background: white; color: black; box-sizing: border-box; }
         .print-item-block { border: 1px solid #000; margin-bottom: -1px; page-break-inside: avoid; }
         .print-header { background-color: #eee; padding: 5px 10px; border-bottom: 1px solid #000; font-weight: bold; display: flex; justify-content: space-between; }
@@ -94,7 +81,7 @@
 <div class="container mb-5" style="max-width: 800px;">
     <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded" style="z-index: 1000; margin: -10px -10px 10px -10px;">
         <h5 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表</h5>
-        <span class="version-tag">Ver: v1.2</span>
+        <span class="version-tag">Ver: v1.3</span>
         
         <div class="progress mt-2" style="height: 6px;">
             <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
@@ -106,7 +93,8 @@
     </div>
     
     <div class="backup-controls">
-        <span class="fw-bold d-none d-sm-inline">📂 備份</span> <button type="button" class="btn btn-sm btn-outline-dark flex-fill" onclick="exportBackup()">⬇️ 下載</button>
+        <span class="fw-bold d-none d-sm-inline">📂 備份</span>
+        <button type="button" class="btn btn-sm btn-outline-dark flex-fill" onclick="exportBackup()">⬇️ 下載</button>
         <label class="btn btn-sm btn-outline-dark flex-fill m-0">
             ⬆️ 讀取
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importBackup(this)">
@@ -138,7 +126,6 @@
                 </div>
                 <div class="col-6">
                     <label class="form-label mb-1">人員 Inspector</label>
-                    <input type="text" class="form-control" id="otherNameInput" placeholder="姓名..." style="display: none;" oninput="checkProgress(); autoSave()">
                     <button type="button" class="btn btn-outline-secondary w-100 text-start text-truncate" id="inspectorBtn" onclick="toggleInspectorModal()">
                         請選擇人員...
                     </button>
@@ -146,14 +133,15 @@
             </div>
             
             <div id="inspectorModal" class="p-3 border rounded bg-light mt-2" style="display: none;">
-                <label class="form-label fw-bold">選擇檢查人員 (可複選)</label>
+                <label class="form-label fw-bold small text-muted mb-2">請勾選檢查人員 (可複選)</label>
                 <div class="d-flex flex-wrap gap-2">
                     <div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Albert" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Albert</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Alden" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Alden</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Ocean" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Ocean</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Stenfer" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Stenfer</label></div>
                     <div class="form-check bg-white px-3 py-1 rounded border">
-                        <input class="form-check-input inspector-check" type="checkbox" value="Other" id="inspOther" onchange="toggleOtherInput(); checkProgress(); autoSave()">
+                        <input class="form-check-input inspector-check" type="checkbox" value="Other" id="inspOther" onchange="toggleOtherInput(); checkProgress(); autoSave(); updateInspectorBtn()">
                         <label class="form-check-label" for="inspOther">Other</label>
                     </div>
                 </div>
+                <input type="text" class="form-control mt-2" id="otherNameInput" placeholder="請輸入姓名..." style="display: none;" oninput="checkProgress(); autoSave(); updateInspectorBtn()">
             </div>
         </div>
 
@@ -172,7 +160,7 @@
         <div style="text-align: right; font-size: 11pt; border-bottom: 2px solid #000; padding-bottom: 5px;">
             <strong>檢查時間：</strong><span id="printDate"></span> &nbsp;|&nbsp; <strong>檢查人員：</strong><span id="printInspector"></span>
         </div>
-        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v1.2</div>
+        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v1.3</div>
     </div>
     <div id="printItemsContainer"></div>
 </div>
@@ -231,12 +219,12 @@
         updateInspectorBtn();
     }
 
-    // 更新人員按鈕文字
     function updateInspectorBtn() {
         const checked = document.querySelectorAll('.inspector-check:checked');
         const names = [];
         checked.forEach(c => names.push(c.value === 'Other' ? (document.getElementById('otherNameInput').value || 'Other') : c.value));
-        document.getElementById('inspectorBtn').innerText = names.length > 0 ? names.join(", ") : "請選擇人員...";
+        const btnText = names.length > 0 ? names.join(", ") : "請選擇人員...";
+        document.getElementById('inspectorBtn').innerText = btnText;
     }
 
     function changeSystem() {
@@ -264,22 +252,21 @@
             const subItems = templates[itemObj.template] || [];
             let subItemsHtml = '';
             subItems.forEach((checkItem, sIndex) => {
-                // 使用 d-flex w-100 確保按鈕均分寬度
+                // Grid 排版 + Flex 按鈕
                 subItemsHtml += `
                 <div class="sub-item-row">
                     <div class="sub-item-label">${checkItem}</div>
                     <div class="sub-item-btn-group">
-                        <div class="btn-group w-100" role="group">
+                        <div class="btn-group btn-check-group" role="group">
                             <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_pass" value="合格" onchange="checkProgress(); autoSave()">
-                            <label class="btn btn-outline-success flex-fill" for="p${pIndex}_s${sIndex}_pass">合格</label>
+                            <label class="btn btn-outline-success" for="p${pIndex}_s${sIndex}_pass">合格</label>
                             <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_fail" value="不合格" onchange="checkProgress(); autoSave()">
-                            <label class="btn btn-outline-danger flex-fill" for="p${pIndex}_s${sIndex}_fail">異常</label>
+                            <label class="btn btn-outline-danger" for="p${pIndex}_s${sIndex}_fail">異常</label>
                         </div>
                     </div>
                 </div>`;
             });
 
-            // 標題與標籤使用 Flexbox 對齊 (防止切字)
             const html = `
             <div class="panel-row" id="row_${pIndex}">
                 <div class="d-flex justify-content-between align-items-start mb-3 pb-2 border-bottom">
@@ -361,6 +348,7 @@
                 if(data.inspectors) data.inspectors.forEach(val => { const el = document.querySelector(`.inspector-check[value="${val}"]`); if(el) el.checked = true; if(val === 'Other') { document.getElementById('inspOther').checked = true; toggleOtherInput(); } });
                 if(data.otherName) document.getElementById('otherNameInput').value = data.otherName;
                 if(data.images) Object.keys(data.images).forEach(id => { const img = document.getElementById(id); if(img) { img.src = data.images[id]; img.style.display = 'inline-block'; const rowId = id.replace('preview_', 'row_'); const row = document.getElementById(rowId); if(row) row.classList.add('completed'); } });
+                updateInspectorBtn(); // 讀取後更新按鈕文字
                 checkProgress();
             }
         };
@@ -374,6 +362,7 @@
         document.getElementById('checkForm').reset(); setInitTime(); toggleOtherInput();
         document.querySelectorAll('.preview-img').forEach(img => { img.src = ""; img.style.display = "none"; });
         document.querySelectorAll('.panel-row').forEach(row => row.classList.remove('completed'));
+        updateInspectorBtn();
         checkProgress();
     }
 
