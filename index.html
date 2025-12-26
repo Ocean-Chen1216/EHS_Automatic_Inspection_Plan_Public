@@ -16,19 +16,61 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
-        body { padding: 15px; background-color: #f0f2f5; font-family: "Microsoft JhengHei", sans-serif; }
-        .panel-row { background: white; margin-bottom: 20px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #ccc; transition: all 0.3s; }
-        .panel-row.completed { border-left-color: #198754; } 
-        .sub-item-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 8px 0; }
-        .sub-item-row:last-child { border-bottom: none; }
-        .sub-item-label { font-size: 0.95rem; color: #333; }
-        .preview-img { max-width: 100%; height: 200px; object-fit: contain; margin-top: 10px; border: 1px solid #ddd; display: none; background-color: #f8f9fa;}
-        .required-star { color: red; }
-        .badge-type { font-size: 0.8em; background-color: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; margin-left: 10px; }
+        body { padding: 10px; background-color: #f0f2f5; font-family: "Microsoft JhengHei", sans-serif; }
         
+        /* 卡片優化 */
+        .panel-row { background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 5px solid #ccc; transition: all 0.3s; }
+        .panel-row.completed { border-left-color: #198754; } 
+        
+        /* 檢查細項 (重要修改: Grid 排版) */
+        .sub-item-row { 
+            display: grid; 
+            grid-template-columns: 1fr auto; /* 左邊文字自動，右邊按鈕固定 */
+            gap: 10px; 
+            align-items: center; 
+            border-bottom: 1px solid #f0f0f0; 
+            padding: 10px 0; 
+        }
+        .sub-item-row:last-child { border-bottom: none; }
+        
+        /* 文字區域 */
+        .sub-item-label { font-size: 0.95rem; color: #333; line-height: 1.4; }
+        
+        /* 按鈕區域固定寬度，防止跑版 */
+        .sub-item-btn-group { width: 140px; flex-shrink: 0; }
+        
+        .preview-img { max-width: 100%; height: 200px; object-fit: contain; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; display: none; background-color: #f8f9fa;}
+        .required-star { color: red; }
+        
+        /* 模組標籤優化 (禁止斷行與擠壓) */
+        .badge-type { 
+            font-size: 0.75em; 
+            background-color: #6c757d; 
+            color: white; 
+            padding: 3px 8px; 
+            border-radius: 4px; 
+            margin-left: 8px; 
+            vertical-align: middle;
+            white-space: nowrap; /* 禁止文字斷行 */
+            flex-shrink: 0;      /* 禁止被擠壓 */
+        }
+        
+        /* 浮動按鈕 */
         .fab-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .fab-btn { box-shadow: 0 4px 6px rgba(0,0,0,0.2); border-radius: 50px; padding: 10px 20px; font-weight: bold; font-size: 0.9em; }
-        .backup-controls { margin-bottom: 15px; background: #e2e3e5; padding: 10px; border-radius: 8px; text-align: center; }
+        .fab-btn { box-shadow: 0 4px 6px rgba(0,0,0,0.2); border-radius: 50px; padding: 12px 20px; font-weight: bold; font-size: 0.9em; }
+        
+        /* 備份按鈕區優化 (Flexbox) */
+        .backup-controls { 
+            margin-bottom: 15px; 
+            background: #e9ecef; 
+            padding: 10px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+        
+        .version-tag { font-size: 0.75rem; color: #6c757d; display: block; text-align: center; margin-top: -5px; margin-bottom: 5px; }
 
         /* PDF Styles */
         #printArea { position: absolute; top: -9999px; left: -9999px; width: 210mm; padding: 10mm; background: white; color: black; box-sizing: border-box; }
@@ -40,79 +82,86 @@
         .print-note { padding: 5px; border-bottom: 1px solid #000; font-size: 10pt; background-color: #fff; }
         .print-img-box { text-align: center; padding: 5px; }
         .print-img { max-height: 180px; max-width: 95%; object-fit: contain; }
-        
-        .version-tag { font-size: 0.75rem; color: #6c757d; display: block; text-align: center; margin-top: -5px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
 
 <div class="fab-container">
-    <button type="button" class="btn btn-warning fab-btn text-dark" onclick="manualSave()">💾 暫存進度</button>
-    <button type="button" class="btn btn-danger fab-btn" onclick="clearDraft()">🗑️ 清除重填</button>
+    <button type="button" class="btn btn-warning fab-btn text-dark" onclick="manualSave()">💾 暫存</button>
+    <button type="button" class="btn btn-danger fab-btn" onclick="clearDraft()">🗑️ 清除</button>
 </div>
 
-<div class="container mb-5">
-    <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded" style="z-index: 1000;">
-        <h4 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表</h4>
-        <span class="version-tag">Ver: v1.0</span>
+<div class="container mb-5" style="max-width: 800px;">
+    <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded" style="z-index: 1000; margin: -10px -10px 10px -10px;">
+        <h5 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表</h5>
+        <span class="version-tag">Ver: v1.1</span>
         
-        <div class="progress mt-2" style="height: 5px;">
+        <div class="progress mt-2" style="height: 6px;">
             <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
         </div>
         <div class="d-flex justify-content-between mt-1">
-            <small class="text-muted" id="progressText">請先選擇系統與區域...</small>
-            <small class="text-success fw-bold" id="autoSaveStatus" style="display:none;">✅ 已自動儲存</small>
+            <small class="text-muted" id="progressText" style="font-size: 0.8em;">請先選擇系統...</small>
+            <small class="text-success fw-bold" id="autoSaveStatus" style="display:none; font-size: 0.8em;">✅ 已存</small>
         </div>
     </div>
     
     <div class="backup-controls">
-        <span class="fw-bold me-2">📂 進度備份：</span>
-        <button type="button" class="btn btn-sm btn-outline-dark me-2" onclick="exportBackup()">⬇️ 下載備份檔</button>
-        <label class="btn btn-sm btn-outline-dark">
-            ⬆️ 讀取備份檔
+        <span class="fw-bold d-none d-sm-inline">📂 備份</span> <button type="button" class="btn btn-sm btn-outline-dark flex-fill" onclick="exportBackup()">⬇️ 下載</button>
+        <label class="btn btn-sm btn-outline-dark flex-fill m-0">
+            ⬆️ 讀取
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importBackup(this)">
         </label>
     </div>
 
     <form id="checkForm">
-        <div class="card p-3 mb-3">
-            <h5 class="card-title">基本資料</h5>
+        <div class="card p-3 mb-3 border-0 shadow-sm">
+            <h5 class="card-title fw-bold mb-3">📋 基本資料</h5>
             
-            <div class="mb-3">
-                <label class="form-label fw-bold text-primary">1. 選擇檢查類別 (System)</label>
+            <div class="mb-2">
+                <label class="form-label text-primary fw-bold mb-1">1. 系統 System</label>
                 <select class="form-select form-select-lg" id="systemSelect" onchange="changeSystem()">
-                    <option value="" disabled selected>-- 請先選擇系統 --</option>
+                    <option value="" disabled selected>-- 請選擇 --</option>
                 </select>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label fw-bold text-primary">2. 選擇區域/樓層 (Area)</label>
+            <div class="mb-2">
+                <label class="form-label text-primary fw-bold mb-1">2. 區域 Area</label>
                 <select class="form-select form-select-lg" id="areaSelect" onchange="changeArea()" disabled>
-                    <option value="" disabled selected>-- 請先選擇系統 --</option>
+                    <option value="" disabled selected>-- 請選擇 --</option>
                 </select>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">檢查時間 (自動帶入)</label>
-                <input type="text" class="form-control" id="checkDate" readonly style="background-color: #e9ecef; font-weight: bold;">
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="form-label mb-1">日期 Date</label>
+                    <input type="text" class="form-control bg-light" id="checkDate" readonly>
+                </div>
+                <div class="col-6">
+                    <label class="form-label mb-1">人員 Inspector</label>
+                    <input type="text" class="form-control" id="otherNameInput" placeholder="姓名..." style="display: none;" oninput="checkProgress(); autoSave()">
+                    <button type="button" class="btn btn-outline-secondary w-100 text-start text-truncate" id="inspectorBtn" onclick="toggleInspectorModal()">
+                        請選擇人員...
+                    </button>
+                </div>
             </div>
             
-            <div class="mb-3">
-                <label class="form-label">檢查人員 <span class="required-star">*</span></label>
-                <div class="d-flex flex-wrap gap-3">
-                    <div class="form-check"><input class="form-check-input inspector-check" type="checkbox" value="Albert" onchange="checkProgress(); autoSave()"><label class="form-check-label">Albert</label></div><div class="form-check"><input class="form-check-input inspector-check" type="checkbox" value="Alden" onchange="checkProgress(); autoSave()"><label class="form-check-label">Alden</label></div><div class="form-check"><input class="form-check-input inspector-check" type="checkbox" value="Ocean" onchange="checkProgress(); autoSave()"><label class="form-check-label">Ocean</label></div><div class="form-check"><input class="form-check-input inspector-check" type="checkbox" value="Stenfer" onchange="checkProgress(); autoSave()"><label class="form-check-label">Stenfer</label></div>
-                    <div class="form-check">
+            <div id="inspectorModal" class="p-3 border rounded bg-light mt-2" style="display: none;">
+                <label class="form-label fw-bold">選擇檢查人員 (可複選)</label>
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Albert" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Albert</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Alden" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Alden</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Ocean" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Ocean</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Stenfer" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Stenfer</label></div>
+                    <div class="form-check bg-white px-3 py-1 rounded border">
                         <input class="form-check-input inspector-check" type="checkbox" value="Other" id="inspOther" onchange="toggleOtherInput(); checkProgress(); autoSave()">
                         <label class="form-check-label" for="inspOther">Other</label>
                     </div>
                 </div>
-                <input type="text" class="form-control mt-2" id="otherNameInput" placeholder="請輸入姓名" style="display: none;" oninput="checkProgress(); autoSave()">
             </div>
         </div>
+
         <div id="panelList"></div>
+        
         <div class="d-grid gap-2 mt-4 pb-5">
-            <button type="button" id="btn-generate" class="btn btn-secondary btn-lg" onclick="generatePDF()" disabled>🔒 請先完成檢查</button>
-            <button type="button" class="btn btn-outline-success btn-lg" onclick="sendEmail()">📧 步驟2：寄信給 Ocean</button>
+            <button type="button" id="btn-generate" class="btn btn-secondary btn-lg py-3" onclick="generatePDF()" disabled>🔒 請先完成檢查</button>
+            <button type="button" class="btn btn-outline-success btn-lg py-3" onclick="sendEmail()">📧 寄信給 Ocean</button>
         </div>
     </form>
 </div>
@@ -123,33 +172,21 @@
         <div style="text-align: right; font-size: 11pt; border-bottom: 2px solid #000; padding-bottom: 5px;">
             <strong>檢查時間：</strong><span id="printDate"></span> &nbsp;|&nbsp; <strong>檢查人員：</strong><span id="printInspector"></span>
         </div>
-        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v1.0</div>
+        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v1.1</div>
     </div>
     <div id="printItemsContainer"></div>
 </div>
 
 <script>
-    // PWA Service Worker 註冊
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-        .then(reg => {
-            console.log('Service Worker 註冊成功', reg);
-            // 檢查更新
+        navigator.serviceWorker.register('sw.js').then(reg => {
             reg.onupdatefound = () => {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
-                    if (installingWorker.state === 'installed') {
-                        if (navigator.serviceWorker.controller) {
-                            // 新版本已安裝，提示使用者重新整理
-                            if(confirm("檢測到新版本！請按下確定以重新載入更新。")) {
-                                window.location.reload();
-                            }
-                        }
-                    }
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller && confirm("檢測到新版本！請按下確定以重新載入更新。")) window.location.reload();
                 };
             };
-        })
-        .catch(err => console.log('Service Worker 註冊失敗', err));
+        }).catch(err => console.log('SW Fail', err));
     }
 
     const allData = {"(每月)消防設備定期撿查": {"2F": [{"name": "2F滅火器001", "template": "滅火器"}, {"name": "2F消防栓箱001", "template": "消防栓箱"}, {"name": "2F火災探測器001", "template": "火災探測器"}, {"name": "2F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "2F出口標示燈001", "template": "出口標示燈"}, {"name": "2F緊急照明燈001", "template": "緊急照明燈"}, {"name": "2F防火門北面", "template": "防火門"}, {"name": "2F防火門南面", "template": "防火門"}], "3F": [{"name": "3F滅火器001", "template": "滅火器"}, {"name": "3F消防栓箱001", "template": "消防栓箱"}, {"name": "3F火災探測器001", "template": "火災探測器"}, {"name": "3F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "3F出口標示燈001", "template": "出口標示燈"}, {"name": "3F緊急照明燈001", "template": "緊急照明燈"}, {"name": "3F防火門北面", "template": "防火門"}, {"name": "3F防火門南面", "template": "防火門"}], "4F": [{"name": "4F滅火器001", "template": "滅火器"}, {"name": "4F消防栓箱001", "template": "消防栓箱"}, {"name": "4F火災探測器001", "template": "火災探測器"}, {"name": "4F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "4F出口標示燈001", "template": "出口標示燈"}, {"name": "4F緊急照明燈001", "template": "緊急照明燈"}, {"name": "4F防火門北面", "template": "防火門"}, {"name": "4F防火門南面", "template": "防火門"}], "5F": [{"name": "5F滅火器001", "template": "滅火器"}, {"name": "5F消防栓箱001", "template": "消防栓箱"}, {"name": "5F火災探測器001", "template": "火災探測器"}, {"name": "5F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "5F出口標示燈001", "template": "出口標示燈"}, {"name": "5F緊急照明燈001", "template": "緊急照明燈"}, {"name": "5F防火門北面", "template": "防火門"}, {"name": "5F防火門南面", "template": "防火門"}], "6F": [{"name": "6F滅火器001", "template": "滅火器"}, {"name": "6F消防栓箱001", "template": "消防栓箱"}, {"name": "6F火災探測器001", "template": "火災探測器"}, {"name": "6F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "6F出口標示燈001", "template": "出口標示燈"}, {"name": "6F緊急照明燈001", "template": "緊急照明燈"}, {"name": "6F防火門北面", "template": "防火門"}, {"name": "6F防火門南面", "template": "防火門"}], "7F": [{"name": "7F滅火器001", "template": "滅火器"}, {"name": "7F消防栓箱001", "template": "消防栓箱"}, {"name": "7F火災探測器001", "template": "火災探測器"}, {"name": "7F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "7F出口標示燈001", "template": "出口標示燈"}, {"name": "7F緊急照明燈001", "template": "緊急照明燈"}, {"name": "7F防火門北面", "template": "防火門"}, {"name": "7F防火門南面", "template": "防火門"}], "8F": [{"name": "8F滅火器001", "template": "滅火器"}, {"name": "8F消防栓箱001", "template": "消防栓箱"}, {"name": "8F火災探測器001", "template": "火災探測器"}, {"name": "8F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "8F出口標示燈001", "template": "出口標示燈"}, {"name": "8F緊急照明燈001", "template": "緊急照明燈"}, {"name": "8F防火門北面", "template": "防火門"}, {"name": "8F防火門南面", "template": "防火門"}]}, "(每月)一般作業環境定期檢查": {"2F": [{"name": "2F一般作業環境", "template": "作業環境"}], "3F": [{"name": "3F一般作業環境", "template": "作業環境"}], "4F": [{"name": "4F一般作業環境", "template": "作業環境"}], "5F": [{"name": "5F一般作業環境", "template": "作業環境"}], "6F": [{"name": "6F一般作業環境", "template": "作業環境"}], "7F": [{"name": "7F一般作業環境", "template": "作業環境"}], "8F": [{"name": "8F一般作業環境", "template": "作業環境"}]}, "(每月)發電機設備定期檢查": {"總部機房": [{"name": "4F發電機", "template": "發電機"}]}, "(每季)空調設備定期檢查": {"空調設備": [{"name": "2F空調", "template": "中央空調"}, {"name": "3F空調", "template": "中央空調"}, {"name": "4F空調", "template": "中央空調"}, {"name": "5F空調", "template": "中央空調"}, {"name": "6F空調", "template": "中央空調"}, {"name": "7F空調", "template": "中央空調"}, {"name": "8F空調", "template": "中央空調"}]}, "(每季)飲水機定期檢查": {"2F": [{"name": "2F飲水機", "template": "2F飲水機"}], "3F": [{"name": "3F飲水機", "template": "3F飲水機"}], "4F": [{"name": "4F飲水機", "template": "4F飲水機"}], "5F": [{"name": "5F飲水機", "template": "5F飲水機"}], "6F": [{"name": "6F飲水機", "template": "6F飲水機"}], "7F": [{"name": "7F飲水機", "template": "7F飲水機"}], "8F": [{"name": "8F飲水機", "template": "8F飲水機"}]}, "(每年)低壓電氣設備定期撿查": {"2F": [{"name": "2-HR", "template": "電箱"}, {"name": "2-L", "template": "電箱"}, {"name": "2-R", "template": "電箱"}, {"name": "2-MP", "template": "電箱"}, {"name": "MP1 (2F)", "template": "電箱"}, {"name": "MA1 (2F)", "template": "電箱"}, {"name": "L2 (2F)", "template": "電箱"}, {"name": "創研處空調盤", "template": "電箱"}, {"name": "2R插座盤", "template": "電箱"}, {"name": "2-HR插座盤", "template": "電箱"}, {"name": "2-ML電燈盤", "template": "電箱"}, {"name": "2MLR", "template": "電箱"}, {"name": "MA-2開關盤", "template": "電箱"}, {"name": "MA-3開關盤", "template": "電箱"}, {"name": "2MLR-A盤", "template": "電箱"}, {"name": "工務處空調盤", "template": "電箱"}], "3F": [{"name": "3F A-1", "template": "電箱"}, {"name": "3F A-2", "template": "電箱"}, {"name": "3F B", "template": "電箱"}], "4F": [{"name": "4-R插座", "template": "電箱"}, {"name": "4-HR插座", "template": "電箱"}, {"name": "4-ML電燈盤", "template": "電箱"}, {"name": "4-MLR盤", "template": "電箱"}, {"name": "4F空調盤", "template": "電箱"}], "5F": [{"name": "5-R插座盤", "template": "電箱"}, {"name": "5HR插座盤", "template": "電箱"}, {"name": "5ML電燈盤", "template": "電箱"}, {"name": "5F空調盤", "template": "電箱"}, {"name": "5MLR盤", "template": "電箱"}], "6F": [{"name": "6-R插座盤", "template": "電箱"}, {"name": "6-HR插座盤", "template": "電箱"}, {"name": "6-ML電燈盤", "template": "電箱"}, {"name": "6樓空調盤", "template": "電箱"}, {"name": "6-MLR盤", "template": "電箱"}], "7F": [{"name": "7R插座盤", "template": "電箱"}, {"name": "7HR插座盤", "template": "電箱"}, {"name": "7ML電燈盤", "template": "電箱"}, {"name": "7樓空調盤", "template": "電箱"}, {"name": "7MLR盤", "template": "電箱"}], "8F": [{"name": "8-R插座盤", "template": "電箱"}, {"name": "8-HR插座盤", "template": "電箱"}, {"name": "8-ML電燈盤", "template": "電箱"}, {"name": "8樓空調盤", "template": "電箱"}, {"name": "8-MLR盤", "template": "電箱"}]}};
@@ -183,8 +220,23 @@
         document.getElementById('checkDate').value = timeStr;
     }
 
+    function toggleInspectorModal() {
+        const modal = document.getElementById('inspectorModal');
+        modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+    }
+
     function toggleOtherInput() {
-        document.getElementById('otherNameInput').style.display = document.getElementById('inspOther').checked ? 'block' : 'none';
+        const isChecked = document.getElementById('inspOther').checked;
+        document.getElementById('otherNameInput').style.display = isChecked ? 'block' : 'none';
+        updateInspectorBtn();
+    }
+
+    // 更新人員按鈕文字
+    function updateInspectorBtn() {
+        const checked = document.querySelectorAll('.inspector-check:checked');
+        const names = [];
+        checked.forEach(c => names.push(c.value === 'Other' ? (document.getElementById('otherNameInput').value || 'Other') : c.value));
+        document.getElementById('inspectorBtn').innerText = names.length > 0 ? names.join(", ") : "請選擇人員...";
     }
 
     function changeSystem() {
@@ -212,9 +264,40 @@
             const subItems = templates[itemObj.template] || [];
             let subItemsHtml = '';
             subItems.forEach((checkItem, sIndex) => {
-                subItemsHtml += `<div class="sub-item-row"><span class="sub-item-label">${checkItem}</span><div class="btn-group btn-group-sm" role="group"><input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_pass" value="合格" onchange="checkProgress(); autoSave()"><label class="btn btn-outline-success" for="p${pIndex}_s${sIndex}_pass">合格</label><input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_fail" value="不合格" onchange="checkProgress(); autoSave()"><label class="btn btn-outline-danger" for="p${pIndex}_s${sIndex}_fail">異常</label></div></div>`;
+                // 使用 d-flex w-100 確保按鈕均分寬度
+                subItemsHtml += `
+                <div class="sub-item-row">
+                    <div class="sub-item-label">${checkItem}</div>
+                    <div class="sub-item-btn-group">
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_pass" value="合格" onchange="checkProgress(); autoSave()">
+                            <label class="btn btn-outline-success flex-fill" for="p${pIndex}_s${sIndex}_pass">合格</label>
+                            <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_fail" value="不合格" onchange="checkProgress(); autoSave()">
+                            <label class="btn btn-outline-danger flex-fill" for="p${pIndex}_s${sIndex}_fail">異常</label>
+                        </div>
+                    </div>
+                </div>`;
             });
-            container.innerHTML += `<div class="panel-row" id="row_${pIndex}"><div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom"><h5 class="fw-bold text-primary m-0">${pIndex + 1}. ${itemObj.name}<span class="badge-type">${itemObj.template}</span></h5><button type="button" class="btn btn-sm btn-outline-primary" onclick="setAllPass(${pIndex}, ${subItems.length})">⚡ 一鍵全合格</button></div><div class="mb-3">${subItemsHtml}</div><input type="text" class="form-control mb-2" id="note_${pIndex}" placeholder="備註..." oninput="autoSave()"><label class="btn btn-secondary btn-sm w-100 mb-2">📷 拍攝照片<input type="file" id="img_${pIndex}" accept="image/*" capture="environment" style="display: none;" onchange="previewImg(this, ${pIndex})"></label><div class="text-center"><img id="preview_${pIndex}" class="preview-img"></div></div>`;
+
+            // 標題與標籤使用 Flexbox 對齊 (防止切字)
+            const html = `
+            <div class="panel-row" id="row_${pIndex}">
+                <div class="d-flex justify-content-between align-items-start mb-3 pb-2 border-bottom">
+                    <div class="d-flex align-items-center flex-wrap">
+                        <h5 class="fw-bold text-primary m-0 me-2" style="word-break: break-word;">${pIndex + 1}. ${itemObj.name}</h5>
+                        <span class="badge-type">${itemObj.template}</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap ms-2" onclick="setAllPass(${pIndex}, ${subItems.length})">⚡ 一鍵</button>
+                </div>
+                <div class="mb-3">${subItemsHtml}</div>
+                <input type="text" class="form-control mb-2" id="note_${pIndex}" placeholder="備註..." oninput="autoSave()">
+                <label class="btn btn-secondary btn-sm w-100 mb-2">
+                    📷 拍攝照片
+                    <input type="file" id="img_${pIndex}" accept="image/*" capture="environment" style="display: none;" onchange="previewImg(this, ${pIndex})">
+                </label>
+                <div class="text-center"><img id="preview_${pIndex}" class="preview-img"></div>
+            </div>`;
+            container.innerHTML += html;
         });
     }
 
@@ -242,7 +325,8 @@
         });
         let hasInspector = false;
         document.querySelectorAll('.inspector-check:checked').forEach(cb => { if (cb.value === 'Other') { if (document.getElementById('otherNameInput').value.trim() !== '') hasInspector = true; } else { hasInspector = true; } });
-        
+        updateInspectorBtn();
+
         const progress = totalSubItems === 0 ? 0 : Math.round(((checkedSubItems / totalSubItems) * 0.5 + (photoCount / currentItems.length) * 0.5) * 100);
         document.getElementById('progressBar').style.width = `${progress}%`;
         const btn = document.getElementById('btn-generate');
