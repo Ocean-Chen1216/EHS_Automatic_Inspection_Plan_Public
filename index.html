@@ -41,7 +41,6 @@
         .print-img-box { text-align: center; padding: 5px; }
         .print-img { max-height: 180px; max-width: 95%; object-fit: contain; }
         
-        /* Version Info Style */
         .version-tag { font-size: 0.75rem; color: #6c757d; display: block; text-align: center; margin-top: -5px; margin-bottom: 5px; }
     </style>
 </head>
@@ -55,7 +54,7 @@
 <div class="container mb-5">
     <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded" style="z-index: 1000;">
         <h4 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表</h4>
-        <span class="version-tag">Ver: v251226</span>
+        <span class="version-tag">Ver: v1.0</span>
         
         <div class="progress mt-2" style="height: 5px;">
             <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
@@ -124,7 +123,7 @@
         <div style="text-align: right; font-size: 11pt; border-bottom: 2px solid #000; padding-bottom: 5px;">
             <strong>檢查時間：</strong><span id="printDate"></span> &nbsp;|&nbsp; <strong>檢查人員：</strong><span id="printInspector"></span>
         </div>
-        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v251226</div>
+        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v1.0</div>
     </div>
     <div id="printItemsContainer"></div>
 </div>
@@ -133,7 +132,23 @@
     // PWA Service Worker 註冊
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('Service Worker 註冊成功', reg))
+        .then(reg => {
+            console.log('Service Worker 註冊成功', reg);
+            // 檢查更新
+            reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                installingWorker.onstatechange = () => {
+                    if (installingWorker.state === 'installed') {
+                        if (navigator.serviceWorker.controller) {
+                            // 新版本已安裝，提示使用者重新整理
+                            if(confirm("檢測到新版本！請按下確定以重新載入更新。")) {
+                                window.location.reload();
+                            }
+                        }
+                    }
+                };
+            };
+        })
         .catch(err => console.log('Service Worker 註冊失敗', err));
     }
 
@@ -235,7 +250,6 @@
         else { btn.disabled = true; btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); btn.innerHTML = "🔒 尚未完成"; }
     }
 
-    // DB Operations
     function getStorageKey() { if(!currentSystem || !currentArea) return null; return `${document.title}_${currentSystem}_${currentArea}`; }
     let saveTimeout; function autoSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { manualSave(true); }, 500); }
     
