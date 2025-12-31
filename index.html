@@ -7,82 +7,63 @@
     <link rel="icon" href="icon.png" type="image/png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0d6efd">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <style>
-        body { padding: 10px; background-color: #f0f2f5; font-family: "Microsoft JhengHei", sans-serif; }
+        body { padding: 10px; padding-bottom: 80px; background-color: #f0f2f5; font-family: "Microsoft JhengHei", sans-serif; }
         
-        /* 卡片優化 */
-        .panel-row { background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 5px solid #ccc; transition: all 0.3s; }
+        /* 閱讀模式 (下載後) */
+        body.readonly-mode { background-color: white; padding: 20px; }
+        body.readonly-mode .fab-container, 
+        body.readonly-mode .backup-controls, 
+        body.readonly-mode .btn-upload,
+        body.readonly-mode #inspectorBtn,
+        body.readonly-mode .btn-check-group, 
+        body.readonly-mode .form-text { display: none !important; }
+        
+        /* 靜態化後的文字樣式 */
+        .static-text { font-weight: bold; color: #333; padding: 5px 0; }
+        .static-result-pass { color: #198754; font-weight: bold; }
+        .static-result-fail { color: #dc3545; font-weight: bold; }
+        .static-label { color: #0d6efd; font-weight: bold; margin-right: 5px; }
+
+        .panel-row { background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 5px solid #ccc; }
         .panel-row.completed { border-left-color: #198754; } 
-        
-        /* 檢查細項 (Grid 排版 - 強制右側按鈕不換行) */
-        .sub-item-row { 
-            display: grid; 
-            grid-template-columns: 1fr auto; 
-            gap: 10px; 
-            align-items: center; 
-            border-bottom: 1px solid #f0f0f0; 
-            padding: 12px 0; 
-        }
+        /* 驗證錯誤時的紅框樣式 */
+        .panel-row.error { border-left-color: #dc3545; border: 2px solid #dc3545; background-color: #fff8f8; }
+
+        .sub-item-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 12px 0; }
         .sub-item-row:last-child { border-bottom: none; }
-        
         .sub-item-label { font-size: 0.95rem; color: #333; line-height: 1.4; }
         
-        /* 按鈕群組強制設定 */
-        .sub-item-btn-group { width: 150px; flex-shrink: 0; }
-        .btn-check-group { display: flex; width: 100%; }
-        .btn-check-group .btn { 
-            flex: 1; 
-            white-space: nowrap; /* 禁止文字斷行 */
-            padding: 0.375rem 0.2rem; /* 縮小內距確保塞得下 */
-            display: flex; align-items: center; justify-content: center;
-        }
-        
+        .badge-type { font-size: 0.75em; background-color: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; margin-left: 8px; white-space: nowrap; }
         .preview-img { max-width: 100%; height: 200px; object-fit: contain; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; display: none; background-color: #f8f9fa;}
-        .required-star { color: red; }
         
-        .badge-type { 
-            font-size: 0.75em; background-color: #6c757d; color: white; 
-            padding: 3px 8px; border-radius: 4px; margin-left: 8px; 
-            vertical-align: middle; white-space: nowrap; flex-shrink: 0; 
-        }
-        
-        .fab-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .fab-btn { box-shadow: 0 4px 6px rgba(0,0,0,0.2); border-radius: 50px; padding: 12px 20px; font-weight: bold; font-size: 0.9em; }
+        .fab-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; gap: 10px; }
+        .fab-btn { box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 50px; padding: 12px 24px; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 5px; }
         
         .backup-controls { margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
         .version-tag { font-size: 0.75rem; color: #6c757d; display: block; text-align: center; margin-top: -5px; margin-bottom: 5px; }
-
-        #printArea { position: absolute; top: -9999px; left: -9999px; width: 210mm; padding: 10mm; background: white; color: black; box-sizing: border-box; }
-        .print-item-block { border: 1px solid #000; margin-bottom: -1px; page-break-inside: avoid; }
-        .print-header { background-color: #eee; padding: 5px 10px; border-bottom: 1px solid #000; font-weight: bold; display: flex; justify-content: space-between; }
-        .print-sub-items { display: grid; grid-template-columns: 1fr 1fr; }
-        .print-sub-item { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 5px; font-size: 10pt; }
-        .print-sub-item:nth-child(even) { border-right: none; }
-        .print-note { padding: 5px; border-bottom: 1px solid #000; font-size: 10pt; background-color: #fff; }
-        .print-img-box { text-align: center; padding: 5px; }
-        .print-img { max-height: 180px; max-width: 95%; object-fit: contain; }
+        .locked-select { font-weight: bold; font-size: 1.1em; color: #0d6efd; padding: 5px 0; }
+        
+        .report-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .report-title { font-size: 1.5rem; font-weight: bold; margin: 0; color: #333; }
+        .report-meta { color: #666; font-size: 0.8rem; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="fab-container">
-    <button type="button" class="btn btn-warning fab-btn text-dark" onclick="manualSave()">💾 暫存</button>
     <button type="button" class="btn btn-danger fab-btn" onclick="clearDraft()">🗑️ 清除</button>
+    <button type="button" class="btn btn-primary fab-btn" onclick="downloadReport()">📥 下載報告</button>
 </div>
 
 <div class="container mb-5" style="max-width: 800px;">
-    <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded" style="z-index: 1000; margin: -10px -10px 10px -10px;">
+    <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded app-header" style="z-index: 1000; margin: -10px -10px 10px -10px;">
         <h5 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表</h5>
-        <span class="version-tag">Ver: v1.3</span>
-        
+        <span class="version-tag">Ver: v14</span>
         <div class="progress mt-2" style="height: 6px;">
             <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
         </div>
@@ -94,9 +75,9 @@
     
     <div class="backup-controls">
         <span class="fw-bold d-none d-sm-inline">📂 備份</span>
-        <button type="button" class="btn btn-sm btn-outline-dark flex-fill" onclick="exportBackup()">⬇️ 下載</button>
+        <button type="button" class="btn btn-sm btn-outline-dark flex-fill" onclick="exportBackup()">⬇️ 下載備份Json</button>
         <label class="btn btn-sm btn-outline-dark flex-fill m-0">
-            ⬆️ 讀取
+            ⬆️ 讀取備份
             <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importBackup(this)">
         </label>
     </div>
@@ -105,14 +86,14 @@
         <div class="card p-3 mb-3 border-0 shadow-sm">
             <h5 class="card-title fw-bold mb-3">📋 基本資料</h5>
             
-            <div class="mb-2">
+            <div class="mb-2" id="div-system">
                 <label class="form-label text-primary fw-bold mb-1">1. 系統 System</label>
                 <select class="form-select form-select-lg" id="systemSelect" onchange="changeSystem()">
                     <option value="" disabled selected>-- 請選擇 --</option>
                 </select>
             </div>
 
-            <div class="mb-2">
+            <div class="mb-2" id="div-area">
                 <label class="form-label text-primary fw-bold mb-1">2. 區域 Area</label>
                 <select class="form-select form-select-lg" id="areaSelect" onchange="changeArea()" disabled>
                     <option value="" disabled selected>-- 請選擇 --</option>
@@ -120,50 +101,33 @@
             </div>
 
             <div class="row g-2 mb-2">
-                <div class="col-6">
+                <div class="col-6" id="div-date">
                     <label class="form-label mb-1">日期 Date</label>
                     <input type="text" class="form-control bg-light" id="checkDate" readonly>
                 </div>
-                <div class="col-6">
+                <div class="col-6" id="div-inspector">
                     <label class="form-label mb-1">人員 Inspector</label>
-                    <button type="button" class="btn btn-outline-secondary w-100 text-start text-truncate" id="inspectorBtn" onclick="toggleInspectorModal()">
-                        請選擇人員...
-                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100 text-start text-truncate" id="inspectorBtn" onclick="toggleInspectorModal()">請選擇...</button>
                 </div>
             </div>
             
             <div id="inspectorModal" class="p-3 border rounded bg-light mt-2" style="display: none;">
-                <label class="form-label fw-bold small text-muted mb-2">請勾選檢查人員 (可複選)</label>
                 <div class="d-flex flex-wrap gap-2">
-                    <div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Albert" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Albert</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Alden" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Alden</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Ocean" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Ocean</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Stenfer" onchange="checkProgress(); autoSave(); updateInspectorBtn()"><label class="form-check-label">Stenfer</label></div>
+                    <div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Albert" onchange="autoSave(); updateInspectorBtn()"><label class="form-check-label">Albert</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Alden" onchange="autoSave(); updateInspectorBtn()"><label class="form-check-label">Alden</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Ocean" onchange="autoSave(); updateInspectorBtn()"><label class="form-check-label">Ocean</label></div><div class="form-check bg-white px-3 py-1 rounded border"><input class="form-check-input inspector-check" type="checkbox" value="Stenfer" onchange="autoSave(); updateInspectorBtn()"><label class="form-check-label">Stenfer</label></div>
                     <div class="form-check bg-white px-3 py-1 rounded border">
-                        <input class="form-check-input inspector-check" type="checkbox" value="Other" id="inspOther" onchange="toggleOtherInput(); checkProgress(); autoSave(); updateInspectorBtn()">
+                        <input class="form-check-input inspector-check" type="checkbox" value="Other" id="inspOther" onchange="toggleOtherInput(); autoSave(); updateInspectorBtn()">
                         <label class="form-check-label" for="inspOther">Other</label>
                     </div>
                 </div>
-                <input type="text" class="form-control mt-2" id="otherNameInput" placeholder="請輸入姓名..." style="display: none;" oninput="checkProgress(); autoSave(); updateInspectorBtn()">
+                <input type="text" class="form-control mt-2" id="otherNameInput" placeholder="請輸入姓名..." style="display: none;" oninput="autoSave(); updateInspectorBtn()">
             </div>
         </div>
 
         <div id="panelList"></div>
-        
-        <div class="d-grid gap-2 mt-4 pb-5">
-            <button type="button" id="btn-generate" class="btn btn-secondary btn-lg py-3" onclick="generatePDF()" disabled>🔒 請先完成檢查</button>
-            <button type="button" class="btn btn-outline-success btn-lg py-3" onclick="sendEmail()">📧 寄信給 Ocean</button>
-        </div>
     </form>
 </div>
 
-<div id="printArea">
-    <div id="printTitleBlock" style="margin-bottom: 10px;">
-        <h2 style="text-align: center; margin-bottom: 5px;">聚陽實業 - <span id="printSystem"></span> <span id="printAreaName"></span> 檢查表</h2>
-        <div style="text-align: right; font-size: 11pt; border-bottom: 2px solid #000; padding-bottom: 5px;">
-            <strong>檢查時間：</strong><span id="printDate"></span> &nbsp;|&nbsp; <strong>檢查人員：</strong><span id="printInspector"></span>
-        </div>
-        <div style="text-align: right; font-size: 9pt; color: #666;">表單版本: v1.3</div>
-    </div>
-    <div id="printItemsContainer"></div>
-</div>
+<script type="application/json" id="data-payload"></script>
 
 <script>
     if ('serviceWorker' in navigator) {
@@ -171,78 +135,72 @@
             reg.onupdatefound = () => {
                 const installingWorker = reg.installing;
                 installingWorker.onstatechange = () => {
-                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller && confirm("檢測到新版本！請按下確定以重新載入更新。")) window.location.reload();
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller && confirm("有新版本！請按確定更新。")) window.location.reload();
                 };
             };
-        }).catch(err => console.log('SW Fail', err));
+        }).catch(console.error);
     }
 
     const allData = {"(每月)消防設備與一般環境定期檢查": {"2F": [{"name": "2F滅火器001", "template": "滅火器"}, {"name": "2F消防栓箱001", "template": "消防栓箱"}, {"name": "2F火災探測器001", "template": "火災探測器"}, {"name": "2F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "2F出口標示燈001", "template": "出口標示燈"}, {"name": "2F緊急照明燈001", "template": "緊急照明燈"}, {"name": "2F防火門北面", "template": "防火門"}, {"name": "2F防火門南面", "template": "防火門"}, {"name": "2F環境", "template": "作業環境"}], "3F": [{"name": "3F滅火器001", "template": "滅火器"}, {"name": "3F消防栓箱001", "template": "消防栓箱"}, {"name": "3F火災探測器001", "template": "火災探測器"}, {"name": "3F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "3F出口標示燈001", "template": "出口標示燈"}, {"name": "3F緊急照明燈001", "template": "緊急照明燈"}, {"name": "3F防火門北面", "template": "防火門"}, {"name": "3F防火門南面", "template": "防火門"}, {"name": "3F環境", "template": "作業環境"}], "4F": [{"name": "4F滅火器001", "template": "滅火器"}, {"name": "4F消防栓箱001", "template": "消防栓箱"}, {"name": "4F火災探測器001", "template": "火災探測器"}, {"name": "4F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "4F出口標示燈001", "template": "出口標示燈"}, {"name": "4F緊急照明燈001", "template": "緊急照明燈"}, {"name": "4F防火門北面", "template": "防火門"}, {"name": "4F防火門南面", "template": "防火門"}, {"name": "4F環境", "template": "作業環境"}], "5F": [{"name": "5F滅火器001", "template": "滅火器"}, {"name": "5F消防栓箱001", "template": "消防栓箱"}, {"name": "5F火災探測器001", "template": "火災探測器"}, {"name": "5F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "5F出口標示燈001", "template": "出口標示燈"}, {"name": "5F緊急照明燈001", "template": "緊急照明燈"}, {"name": "5F防火門北面", "template": "防火門"}, {"name": "5F防火門南面", "template": "防火門"}, {"name": "5F環境", "template": "作業環境"}], "6F": [{"name": "6F滅火器001", "template": "滅火器"}, {"name": "6F消防栓箱001", "template": "消防栓箱"}, {"name": "6F火災探測器001", "template": "火災探測器"}, {"name": "6F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "6F出口標示燈001", "template": "出口標示燈"}, {"name": "6F緊急照明燈001", "template": "緊急照明燈"}, {"name": "6F防火門北面", "template": "防火門"}, {"name": "6F防火門南面", "template": "防火門"}, {"name": "6F環境", "template": "作業環境"}], "7F": [{"name": "7F滅火器001", "template": "滅火器"}, {"name": "7F消防栓箱001", "template": "消防栓箱"}, {"name": "7F火災探測器001", "template": "火災探測器"}, {"name": "7F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "7F出口標示燈001", "template": "出口標示燈"}, {"name": "7F緊急照明燈001", "template": "緊急照明燈"}, {"name": "7F防火門北面", "template": "防火門"}, {"name": "7F防火門南面", "template": "防火門"}, {"name": "7F環境", "template": "作業環境"}], "8F": [{"name": "8F滅火器001", "template": "滅火器"}, {"name": "8F消防栓箱001", "template": "消防栓箱"}, {"name": "8F火災探測器001", "template": "火災探測器"}, {"name": "8F火災警鈴/廣播001", "template": "火災警鈴/廣播"}, {"name": "8F出口標示燈001", "template": "出口標示燈"}, {"name": "8F緊急照明燈001", "template": "緊急照明燈"}, {"name": "8F防火門北面", "template": "防火門"}, {"name": "8F防火門南面", "template": "防火門"}, {"name": "8F環境", "template": "作業環境"}]}, "(每月)發電機設備定期檢查": {"總部機房": [{"name": "4F發電機", "template": "發電機"}]}, "(每季)空調設備定期檢查": {"空調設備": [{"name": "2F空調", "template": "中央空調"}, {"name": "3F空調", "template": "中央空調"}, {"name": "4F空調", "template": "中央空調"}, {"name": "5F空調", "template": "中央空調"}, {"name": "6F空調", "template": "中央空調"}, {"name": "7F空調", "template": "中央空調"}, {"name": "8F空調", "template": "中央空調"}]}, "(每季)飲水機定期檢查": {"2F": [{"name": "2F飲水機", "template": "2F飲水機"}], "3F": [{"name": "3F飲水機", "template": "3F飲水機"}], "4F": [{"name": "4F飲水機", "template": "4F飲水機"}], "5F": [{"name": "5F飲水機", "template": "5F飲水機"}], "6F": [{"name": "6F飲水機", "template": "6F飲水機"}], "7F": [{"name": "7F飲水機", "template": "7F飲水機"}], "8F": [{"name": "8F飲水機", "template": "8F飲水機"}]}, "(每年)低壓電氣設備定期撿查": {"2F": [{"name": "2-HR", "template": "電箱"}, {"name": "2-L", "template": "電箱"}, {"name": "2-R", "template": "電箱"}, {"name": "2-MP", "template": "電箱"}, {"name": "MP1 (2F)", "template": "電箱"}, {"name": "MA1 (2F)", "template": "電箱"}, {"name": "L2 (2F)", "template": "電箱"}, {"name": "創研處空調盤", "template": "電箱"}, {"name": "2R插座盤", "template": "電箱"}, {"name": "2-HR插座盤", "template": "電箱"}, {"name": "2-ML電燈盤", "template": "電箱"}, {"name": "2MLR", "template": "電箱"}, {"name": "MA-2開關盤", "template": "電箱"}, {"name": "MA-3開關盤", "template": "電箱"}, {"name": "2MLR-A盤", "template": "電箱"}, {"name": "工務處空調盤", "template": "電箱"}], "3F": [{"name": "3F A-1", "template": "電箱"}, {"name": "3F A-2", "template": "電箱"}, {"name": "3F B", "template": "電箱"}], "4F": [{"name": "4-R插座", "template": "電箱"}, {"name": "4-HR插座", "template": "電箱"}, {"name": "4-ML電燈盤", "template": "電箱"}, {"name": "4-MLR盤", "template": "電箱"}, {"name": "4F空調盤", "template": "電箱"}], "5F": [{"name": "5-R插座盤", "template": "電箱"}, {"name": "5HR插座盤", "template": "電箱"}, {"name": "5ML電燈盤", "template": "電箱"}, {"name": "5F空調盤", "template": "電箱"}, {"name": "5MLR盤", "template": "電箱"}], "6F": [{"name": "6-R插座盤", "template": "電箱"}, {"name": "6-HR插座盤", "template": "電箱"}, {"name": "6-ML電燈盤", "template": "電箱"}, {"name": "6樓空調盤", "template": "電箱"}, {"name": "6-MLR盤", "template": "電箱"}], "7F": [{"name": "7R插座盤", "template": "電箱"}, {"name": "7HR插座盤", "template": "電箱"}, {"name": "7ML電燈盤", "template": "電箱"}, {"name": "7樓空調盤", "template": "電箱"}, {"name": "7MLR盤", "template": "電箱"}], "8F": [{"name": "8-R插座盤", "template": "電箱"}, {"name": "8-HR插座盤", "template": "電箱"}, {"name": "8-ML電燈盤", "template": "電箱"}, {"name": "8樓空調盤", "template": "電箱"}, {"name": "8-MLR盤", "template": "電箱"}]}};
     const templates = {"電箱": ["1. 外殼與門蓋鎖扣 (外觀完整)", "2. 周圍環境 (無雜物/積水)", "3. 線路接點溫度 (無異常發熱)", "4. 保護裝置功能 (標示清晰)"], "滅火器": ["1. 壓力表(綠色範圍)", "2. 安全插銷(正常且未拆封)", "3. 皮管噴嘴(無變形異常)", "4. 瓶身外觀(無鏽蝕變形)", "5. 標示期限(清晰、檢查卡、藥劑)", "6. 擺放位置(易取得、字樣清晰)"], "消防栓箱": ["1. 箱體周圍(雜物堆積)", "2. 指示燈(是否紅燈恆亮)", "3. 箱門開關(是否能正常開啟)", "4. 瞄子(噴嘴是否正常)", "5. 水帶(摺疊掛好)", "6. 開關閥(正常完好)"], "火災探測器": ["1. 是否被裝潢、冷氣出風口遮蔽", "2. 是否被高疊的貨物（樣品）阻擋感應", "3. 外觀是否鬆脫、懸吊"], "火災警鈴/廣播": ["1. 外觀是否完好", "2. 有無被封死或破壞"], "出口標示燈": ["1. 是否24小時恆亮", "2. 燈罩是否破損、模糊", "3. 是否被裝潢遮蔽"], "緊急照明燈": ["1. 插頭是否插在插座上", "2. 測試鈕按下是否會亮", "3. 外觀是否焦黑或電池漏液"], "防火門": ["1. 是否常時關閉", "2. 是否堆放雜物阻礙開啟", "3. 門弓器是否能自動將門帶上"], "發電機": ["1. 燃料存量與管線 (無洩漏)", "2. 機油/冷卻水 (液位正常)", "3. 排煙與通風 (順暢無損)", "4. 噪音與震動 (無異常)", "5. 電瓶電壓 (接頭無腐蝕)", "6. ATS自動切換 (測試正常)", "7. 輸出電壓頻率 (標準範圍)", "8. 接地線連接 (無鬆脫)"], "2F飲水機": ["1. 水質檢測報告書(3月內)", "2. 維護紀錄卡(簽名、更換項目)", "3. 單位負責人標示", "4. 是否有噴濺積水情形", "5. 周邊環境(水漬、插頭焦黑、漏水感電、接地)", "6. 防燙熱水鎖", "7. 是否穩固不易傾倒"], "3F飲水機": ["1. 水質檢測報告書(3月內)", "2. 維護紀錄卡(簽名、更換項目)", "3. 單位負責人標示", "4. 是否有噴濺積水情形", "5. 周邊環境(水漬、插頭焦黑、漏水感電、接地)", "6. 防燙熱水鎖", "7. 是否穩固不易傾倒"], "4F飲水機": ["1. 水質檢測報告書(3月內)", "2. 維護紀錄卡(簽名、更換項目)", "3. 單位負責人標示", "4. 是否有噴濺積水情形", "5. 周邊環境(水漬、插頭焦黑、漏水感電、接地)", "6. 防燙熱水鎖", "7. 是否穩固不易傾倒"], "5F飲水機": ["1. 水質檢測報告書(3月內)", "2. 維護紀錄卡(簽名、更換項目)", "3. 單位負責人標示", "4. 是否有噴濺積水情形", "5. 周邊環境(水漬、插頭焦黑、漏水感電、接地)", "6. 防燙熱水鎖", "7. 是否穩固不易傾倒"], "6F飲水機": ["1. 水質檢測報告書(3月內)", "2. 維護紀錄卡(簽名、更換項目)", "3. 單位負責人標示", "4. 是否有噴濺積水情形", "5. 周邊環境(水漬、插頭焦黑、漏水感電、接地)", "6. 防燙熱水鎖", "7. 是否穩固不易傾倒"], "7F飲水機": ["1. 水質檢測報告書(3月內)", "2. 維護紀錄卡(簽名、更換項目)", "3. 單位負責人標示", "4. 是否有噴濺積水情形", "5. 周邊環境(水漬、插頭焦黑、漏水感電、接地)", "6. 防燙熱水鎖", "7. 是否穩固不易傾倒"], "8F飲水機": ["1. 水質檢測報告書(3月內)", "2. 維護紀錄卡(簽名、更換項目)", "3. 單位負責人標示", "4. 是否有噴濺積水情形", "5. 周邊環境(水漬、插頭焦黑、漏水感電、接地)", "6. 防燙熱水鎖", "7. 是否穩固不易傾倒"], "中央空調": ["1. 主機運轉狀態 (無異音)", "2. 散熱排/過濾網 (清潔)", "3. 設備周圍環境 (通風)", "4. 排水盤/冷凝水管 (無堵塞)", "5. 冰水管線保溫 (無滴水)", "6. 電氣接點 (無過熱)", "7. 安全防護裝置 (功能正常)"], "作業環境": ["1. 走道與緊急出口 (無堆積)", "2. 照明正常與燈具無損壞", "3. 延長線與電線 (無壓重物)", "4. 飲水機/加熱設備 (無漏水/漏電)", "5. 廢棄物處理 (分類正確)"]};
     let currentSystem = "", currentArea = "", currentItems = [];
     
-    // DB
-    const DB_NAME = "ChecklistDB_V8";
-    const DB_VERSION = 1;
-    let db;
+    const DB_NAME = "ChecklistDB_V8"; const DB_VERSION = 1; let db;
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = function(event) { db = event.target.result; if (!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts", { keyPath: "id" }); };
-    request.onsuccess = function(event) { db = event.target.result; initPage(); };
-    request.onerror = function(event) { console.error("DB Error", event); initPage(); };
+    request.onupgradeneeded = function(e) { db = e.target.result; if(!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts", { keyPath: "id" }); };
+    request.onsuccess = function(e) { db = e.target.result; initPage(); };
 
     function initPage() {
         setInitTime();
-        const savedSys = localStorage.getItem('last_system');
-        const savedArea = localStorage.getItem('last_area');
         const sysSelect = document.getElementById('systemSelect');
-        Object.keys(allData).forEach(sys => { const option = document.createElement("option"); option.value = sys; option.text = sys; sysSelect.appendChild(option); });
-        if(savedSys && allData[savedSys]) {
-            sysSelect.value = savedSys; changeSystem();
-            if(savedArea && allData[savedSys][savedArea]) { document.getElementById('areaSelect').value = savedArea; changeArea(); }
+        Object.keys(allData).forEach(sys => { const opt = document.createElement("option"); opt.value = sys; opt.text = sys; sysSelect.appendChild(opt); });
+        
+        if (!document.body.classList.contains('readonly-mode')) {
+            const savedSys = localStorage.getItem('last_system');
+            const savedArea = localStorage.getItem('last_area');
+            if(savedSys && allData[savedSys]) {
+                sysSelect.value = savedSys; changeSystem();
+                if(savedArea && allData[savedSys][savedArea]) { document.getElementById('areaSelect').value = savedArea; changeArea(); }
+            }
         }
     }
 
     function setInitTime() {
         const now = new Date();
-        const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-        document.getElementById('checkDate').value = timeStr;
-    }
-
-    function toggleInspectorModal() {
-        const modal = document.getElementById('inspectorModal');
-        modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+        if(!document.getElementById('checkDate').value) {
+            const dateStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0') + " " + String(now.getHours()).padStart(2,'0') + ":" + String(now.getMinutes()).padStart(2,'0');
+            document.getElementById('checkDate').value = dateStr;
+        }
     }
 
     function toggleOtherInput() {
-        const isChecked = document.getElementById('inspOther').checked;
-        document.getElementById('otherNameInput').style.display = isChecked ? 'block' : 'none';
+        document.getElementById('otherNameInput').style.display = document.getElementById('inspOther').checked ? 'block' : 'none';
         updateInspectorBtn();
     }
-
     function updateInspectorBtn() {
         const checked = document.querySelectorAll('.inspector-check:checked');
         const names = [];
         checked.forEach(c => names.push(c.value === 'Other' ? (document.getElementById('otherNameInput').value || 'Other') : c.value));
-        const btnText = names.length > 0 ? names.join(", ") : "請選擇人員...";
-        document.getElementById('inspectorBtn').innerText = btnText;
+        document.getElementById('inspectorBtn').innerText = names.length > 0 ? names.join(", ") : "請選擇人員...";
+    }
+    function toggleInspectorModal() {
+        const m = document.getElementById('inspectorModal'); m.style.display = m.style.display === 'none' ? 'block' : 'none';
     }
 
     function changeSystem() {
         currentSystem = document.getElementById('systemSelect').value;
         const areaSelect = document.getElementById('areaSelect');
-        areaSelect.innerHTML = '<option value="" disabled selected>-- 請選擇區域 --</option>';
-        areaSelect.disabled = false;
-        Object.keys(allData[currentSystem]).forEach(area => { const option = document.createElement("option"); option.value = area; option.text = area; areaSelect.appendChild(option); });
-        document.getElementById('panelList').innerHTML = ""; currentItems = []; checkProgress();
+        areaSelect.innerHTML = '<option value="" disabled selected>-- 請選擇區域 --</option>'; areaSelect.disabled = false;
+        Object.keys(allData[currentSystem]).forEach(area => { const opt = document.createElement("option"); opt.value = area; opt.text = area; areaSelect.appendChild(opt); });
+        document.getElementById('panelList').innerHTML = ""; currentItems = []; 
         localStorage.setItem('last_system', currentSystem);
     }
-
     function changeArea() {
         currentArea = document.getElementById('areaSelect').value;
         currentItems = allData[currentSystem][currentArea];
         document.getElementById('pageTitle').innerText = `${currentSystem} - ${currentArea}`;
         localStorage.setItem('last_area', currentArea);
-        renderPanels(); loadDraftFromDB(); checkProgress();
+        renderPanels(); loadDraftFromDB();
     }
 
     function renderPanels() {
@@ -252,35 +210,34 @@
             const subItems = templates[itemObj.template] || [];
             let subItemsHtml = '';
             subItems.forEach((checkItem, sIndex) => {
-                // Grid 排版 + Flex 按鈕
                 subItemsHtml += `
-                <div class="sub-item-row">
+                <div class="sub-item-row" id="sub_row_${pIndex}_${sIndex}">
                     <div class="sub-item-label">${checkItem}</div>
                     <div class="sub-item-btn-group">
-                        <div class="btn-group btn-check-group" role="group">
-                            <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_pass" value="合格" onchange="checkProgress(); autoSave()">
-                            <label class="btn btn-outline-success" for="p${pIndex}_s${sIndex}_pass">合格</label>
-                            <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_fail" value="不合格" onchange="checkProgress(); autoSave()">
-                            <label class="btn btn-outline-danger" for="p${pIndex}_s${sIndex}_fail">異常</label>
+                        <div class="btn-group w-100 btn-check-group" role="group">
+                            <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_pass" value="合格" onchange="autoSave()">
+                            <label class="btn btn-outline-success flex-fill" for="p${pIndex}_s${sIndex}_pass">合格</label>
+                            <input type="radio" class="btn-check" name="p${pIndex}_s${sIndex}" id="p${pIndex}_s${sIndex}_fail" value="不合格" onchange="autoSave()">
+                            <label class="btn btn-outline-danger flex-fill" for="p${pIndex}_s${sIndex}_fail">異常</label>
                         </div>
+                        <div class="static-result" style="display:none;"></div>
                     </div>
                 </div>`;
             });
-
             const html = `
             <div class="panel-row" id="row_${pIndex}">
                 <div class="d-flex justify-content-between align-items-start mb-3 pb-2 border-bottom">
                     <div class="d-flex align-items-center flex-wrap">
-                        <h5 class="fw-bold text-primary m-0 me-2" style="word-break: break-word;">${pIndex + 1}. ${itemObj.name}</h5>
+                        <h5 class="fw-bold text-primary m-0 me-2">${pIndex + 1}. ${itemObj.name}</h5>
                         <span class="badge-type">${itemObj.template}</span>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap ms-2" onclick="setAllPass(${pIndex}, ${subItems.length})">⚡ 一鍵</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary text-nowrap ms-2 btn-upload" onclick="setAllPass(${pIndex}, ${subItems.length})">⚡ 一鍵</button>
                 </div>
                 <div class="mb-3">${subItemsHtml}</div>
                 <input type="text" class="form-control mb-2" id="note_${pIndex}" placeholder="備註..." oninput="autoSave()">
-                <label class="btn btn-secondary btn-sm w-100 mb-2">
-                    📷 拍攝照片
-                    <input type="file" id="img_${pIndex}" accept="image/*" capture="environment" style="display: none;" onchange="previewImg(this, ${pIndex})">
+                <label class="btn btn-secondary btn-sm w-100 mb-2 btn-upload">
+                    📷 拍攝/上傳
+                    <input type="file" id="img_${pIndex}" accept="image/*" capture="environment" style="display: none;" onchange="compressAndPreview(this, ${pIndex})">
                 </label>
                 <div class="text-center"><img id="preview_${pIndex}" class="preview-img"></div>
             </div>`;
@@ -288,88 +245,229 @@
         });
     }
 
-    function setAllPass(pIndex, count) { for(let s=0; s<count; s++) { const el = document.getElementById(`p${pIndex}_s${s}_pass`); if(el) el.checked = true; } checkProgress(); autoSave(); }
-    
-    function previewImg(input, index) {
+    function setAllPass(pIndex, count) {
+        for(let s=0; s<count; s++) { const el = document.getElementById(`p${pIndex}_s${s}_pass`); if(el) el.checked = true; }
+        autoSave();
+        document.getElementById(`row_${pIndex}`).classList.remove('error');
+    }
+
+    function compressAndPreview(input, index) {
         if (input.files && input.files[0]) {
+            const file = input.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                const img = document.getElementById(`preview_${index}`); img.src = e.target.result; img.style.display = 'inline-block';
-                document.getElementById(`row_${index}`).classList.add("completed"); checkProgress(); autoSave();
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1024;
+                    let width = img.width; let height = img.height;
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                    const imgEl = document.getElementById(`preview_${index}`);
+                    imgEl.src = dataUrl; imgEl.style.display = 'inline-block';
+                    document.getElementById(`row_${index}`).classList.add("completed");
+                    document.getElementById(`row_${index}`).classList.remove('error'); // 拍照後移除紅框
+                    autoSave();
+                }
             }
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(file);
         }
     }
 
-    function checkProgress() {
-        if (!currentItems || currentItems.length === 0) return;
-        let totalSubItems = 0, checkedSubItems = 0, photoCount = 0;
-        currentItems.forEach((itemObj, p) => {
-            const subCount = (templates[itemObj.template] || []).length; totalSubItems += subCount;
-            for (let s = 0; s < subCount; s++) { if (document.querySelector(`input[name="p${p}_s${s}"]:checked`)) checkedSubItems++; }
-            const imgPreview = document.getElementById(`preview_${p}`);
-            if (imgPreview.src && imgPreview.style.display !== 'none') photoCount++;
-        });
-        let hasInspector = false;
-        document.querySelectorAll('.inspector-check:checked').forEach(cb => { if (cb.value === 'Other') { if (document.getElementById('otherNameInput').value.trim() !== '') hasInspector = true; } else { hasInspector = true; } });
-        updateInspectorBtn();
-
-        const progress = totalSubItems === 0 ? 0 : Math.round(((checkedSubItems / totalSubItems) * 0.5 + (photoCount / currentItems.length) * 0.5) * 100);
-        document.getElementById('progressBar').style.width = `${progress}%`;
-        const btn = document.getElementById('btn-generate');
-        if (checkedSubItems === totalSubItems && photoCount === currentItems.length && hasInspector) { btn.disabled = false; btn.classList.remove('btn-secondary'); btn.classList.add('btn-primary'); btn.innerHTML = `📥 下載 ${currentSystem}_${currentArea} PDF`; } 
-        else { btn.disabled = true; btn.classList.remove('btn-primary'); btn.classList.add('btn-secondary'); btn.innerHTML = "🔒 尚未完成"; }
-    }
-
+    // DB logic
     function getStorageKey() { if(!currentSystem || !currentArea) return null; return `${document.title}_${currentSystem}_${currentArea}`; }
     let saveTimeout; function autoSave() { clearTimeout(saveTimeout); saveTimeout = setTimeout(() => { manualSave(true); }, 500); }
     
     function manualSave(silent = false) {
         if (!db) return; const key = getStorageKey(); if (!key) return;
-        const radios = [], notes = {}, inspectors = [], images = {};
-        document.querySelectorAll('input[type="radio"]:checked').forEach(r => radios.push(r.id));
-        document.querySelectorAll('input[type="text"][id^="note_"]').forEach(n => { if(n.value) notes[n.id] = n.value; });
-        document.querySelectorAll('.inspector-check:checked').forEach(i => inspectors.push(i.value));
-        document.querySelectorAll('.preview-img').forEach(img => { if (img.src && img.src.startsWith('data:image')) images[img.id] = img.src; });
-        const data = { id: key, radios, notes, inspectors, otherName: document.getElementById('otherNameInput').value, images, timestamp: new Date().getTime() };
-        const tx = db.transaction(["drafts"], "readwrite"); tx.objectStore("drafts").put(data);
-        if(!silent) { const status = document.getElementById('autoSaveStatus'); status.style.display = 'block'; setTimeout(() => status.style.display = 'none', 2000); }
+        const data = collectData(); data.id = key;
+        db.transaction(["drafts"], "readwrite").objectStore("drafts").put(data);
+        if(!silent) { document.getElementById('autoSaveStatus').style.display = 'block'; setTimeout(() => document.getElementById('autoSaveStatus').style.display = 'none', 2000); }
+    }
+
+    function collectData() {
+        const radios = []; document.querySelectorAll('input[type="radio"]:checked').forEach(r => radios.push(r.id));
+        const notes = {}; document.querySelectorAll('input[type="text"][id^="note_"]').forEach(n => { if(n.value) notes[n.id] = n.value; });
+        const inspectors = []; document.querySelectorAll('.inspector-check:checked').forEach(i => inspectors.push(i.value));
+        const images = {}; document.querySelectorAll('.preview-img').forEach(img => { if (img.src && img.src.startsWith('data:image')) images[img.id] = img.src; });
+        const inspectorNames = [];
+        document.querySelectorAll('.inspector-check:checked').forEach(c => {
+            if (c.value === 'Other') { const val = document.getElementById('otherNameInput').value; if(val) inspectorNames.push(val); } 
+            else { inspectorNames.push(c.value); }
+        });
+        return {
+            system: currentSystem, area: currentArea, date: document.getElementById('checkDate').value,
+            inspectorText: inspectorNames.join(", "),
+            radios: radios, notes: notes, inspectors: inspectors,
+            otherName: document.getElementById('otherNameInput').value, images: images, timestamp: new Date().getTime()
+        };
     }
 
     function loadDraftFromDB() {
         if (!db) return; const key = getStorageKey(); if (!key) return;
-        const tx = db.transaction(["drafts"]); const req = tx.objectStore("drafts").get(key);
-        req.onsuccess = function(e) {
+        db.transaction(["drafts"]).objectStore("drafts").get(key).onsuccess = function(e) {
             const data = e.target.result;
-            if (data) {
-                if(data.radios) data.radios.forEach(id => { const el = document.getElementById(id); if(el) el.checked = true; });
-                if(data.notes) Object.keys(data.notes).forEach(id => { const el = document.getElementById(id); if(el) el.value = data.notes[id]; });
-                document.querySelectorAll('.inspector-check').forEach(c => c.checked = false);
-                if(data.inspectors) data.inspectors.forEach(val => { const el = document.querySelector(`.inspector-check[value="${val}"]`); if(el) el.checked = true; if(val === 'Other') { document.getElementById('inspOther').checked = true; toggleOtherInput(); } });
-                if(data.otherName) document.getElementById('otherNameInput').value = data.otherName;
-                if(data.images) Object.keys(data.images).forEach(id => { const img = document.getElementById(id); if(img) { img.src = data.images[id]; img.style.display = 'inline-block'; const rowId = id.replace('preview_', 'row_'); const row = document.getElementById(rowId); if(row) row.classList.add('completed'); } });
-                updateInspectorBtn(); // 讀取後更新按鈕文字
-                checkProgress();
-            }
+            if (data) applyData(data);
         };
     }
 
+    function applyData(data) {
+        if(data.radios) data.radios.forEach(id => { const el = document.getElementById(id); if(el) el.checked = true; });
+        if(data.notes) Object.keys(data.notes).forEach(id => { const el = document.getElementById(id); if(el) el.value = data.notes[id]; });
+        document.querySelectorAll('.inspector-check').forEach(c => c.checked = false);
+        if(data.inspectors) data.inspectors.forEach(val => { 
+            const el = document.querySelector(`.inspector-check[value="${val}"]`); if(el) el.checked = true; 
+            if(val === 'Other') { document.getElementById('inspOther').checked = true; toggleOtherInput(); } 
+        });
+        if(data.otherName) document.getElementById('otherNameInput').value = data.otherName;
+        updateInspectorBtn();
+        if(data.images) Object.keys(data.images).forEach(id => { 
+            const img = document.getElementById(id); 
+            if(img) { img.src = data.images[id]; img.style.display = 'inline-block'; const row = document.getElementById(id.replace('preview_', 'row_')); if(row) row.classList.add('completed'); } 
+        });
+    }
+
     function clearDraft() {
-        if(!confirm("⚠️ 確定要清除此區域的所有暫存資料嗎？")) return;
-        if (!db) return;
-        const key = getStorageKey();
-        const tx = db.transaction(["drafts"], "readwrite"); tx.objectStore("drafts").delete(key);
+        if(!confirm("⚠️ 確定要清除此區域的所有內容嗎？")) return;
+        if (!db) return; const key = getStorageKey();
+        db.transaction(["drafts"], "readwrite").objectStore("drafts").delete(key);
         document.getElementById('checkForm').reset(); setInitTime(); toggleOtherInput();
         document.querySelectorAll('.preview-img').forEach(img => { img.src = ""; img.style.display = "none"; });
-        document.querySelectorAll('.panel-row').forEach(row => row.classList.remove('completed'));
+        document.querySelectorAll('.panel-row').forEach(row => { row.classList.remove('completed'); row.classList.remove('error'); });
         updateInspectorBtn();
-        checkProgress();
+        alert("已清除！");
+    }
+
+    // === V14.0 核心：強制驗證 (勾選 + 照片) ===
+    function downloadReport() {
+        if(!currentSystem || !currentArea) { alert("請先選擇系統與區域"); return; }
+        
+        // 1. 驗證人員
+        const inspectorNames = document.getElementById('inspectorBtn').innerText;
+        if(inspectorNames === "請選擇人員..." || inspectorNames === "") {
+            alert("❌ 錯誤：請至少選擇一位檢查人員！"); return;
+        }
+
+        // 2. 驗證檢查項目 & 照片
+        let missingCount = 0;
+        let firstMissingElem = null;
+        currentItems.forEach((itemObj, pIndex) => {
+            const subItems = templates[itemObj.template] || [];
+            let isCheckComplete = true;
+            let isPhotoUploaded = false;
+
+            // 驗證勾選
+            subItems.forEach((_, sIndex) => {
+                const pass = document.getElementById(`p${pIndex}_s${sIndex}_pass`);
+                const fail = document.getElementById(`p${pIndex}_s${sIndex}_fail`);
+                if (!pass.checked && !fail.checked) isCheckComplete = false;
+            });
+
+            // 驗證照片 (檢查預覽圖是否顯示)
+            const imgEl = document.getElementById(`preview_${pIndex}`);
+            if (imgEl && imgEl.src && imgEl.style.display !== 'none') {
+                isPhotoUploaded = true;
+            }
+
+            const row = document.getElementById(`row_${pIndex}`);
+            // 條件：必須 (勾選完畢) 且 (已上傳照片)
+            if (!isCheckComplete || !isPhotoUploaded) {
+                row.classList.add('error'); 
+                missingCount++;
+                if(!firstMissingElem) firstMissingElem = row;
+            } else { 
+                row.classList.remove('error'); 
+            }
+        });
+
+        if (missingCount > 0) {
+            alert(`❌ 錯誤：還有 ${missingCount} 個設備未完成！
+
+請確認：
+1. 所有細項皆已勾選
+2. 每個設備皆已拍攝照片 (必要)`);
+            firstMissingElem.scrollIntoView({behavior: "smooth", block: "center"});
+            return;
+        }
+
+        // 3. 複製 DOM
+        const doc = document.documentElement.cloneNode(true);
+        const body = doc.querySelector('body');
+        body.classList.add('readonly-mode');
+        
+        // 移除 App Header
+        const appHeader = doc.querySelector('.app-header');
+        if(appHeader) appHeader.remove();
+
+        // 建立靜態標題
+        const reportTitleDiv = document.createElement('div');
+        reportTitleDiv.className = 'report-header';
+        reportTitleDiv.innerHTML = `
+            <div class="report-title">${document.title}</div>
+            <div class="report-meta">Ver: ${document.querySelector('.version-tag').innerText.replace('Ver: ', '')} | Exported: ${new Date().toLocaleDateString()}</div>
+        `;
+        doc.querySelector('.container').prepend(reportTitleDiv);
+
+        // 靜態化：系統/區域
+        const sysVal = document.getElementById('systemSelect').value;
+        const areaVal = document.getElementById('areaSelect').value;
+        doc.querySelector('#div-system').innerHTML = `<span class="static-label">系統:</span><span class="static-text">${sysVal}</span>`;
+        doc.querySelector('#div-area').innerHTML = `<span class="static-label">區域:</span><span class="static-text">${areaVal}</span>`;
+        
+        // 靜態化：日期/人員
+        const dateVal = document.getElementById('checkDate').value;
+        doc.querySelector('#div-date').innerHTML = `<span class="static-label">日期:</span><span class="static-text">${dateVal}</span>`;
+        doc.querySelector('#div-inspector').innerHTML = `<span class="static-label">人員:</span><span class="static-text">${inspectorNames}</span>`;
+        doc.querySelector('#inspectorModal').remove();
+
+        // 靜態化：檢查結果
+        currentItems.forEach((itemObj, pIndex) => {
+            const subItems = templates[itemObj.template] || [];
+            subItems.forEach((_, sIndex) => {
+                const pass = document.getElementById(`p${pIndex}_s${sIndex}_pass`).checked;
+                const fail = document.getElementById(`p${pIndex}_s${sIndex}_fail`).checked;
+                const subRow = doc.querySelector(`#sub_row_${pIndex}_${sIndex}`);
+                const btnGroup = subRow.querySelector('.sub-item-btn-group');
+                let resultHtml = "";
+                if(pass) resultHtml = '<span class="static-result-pass">✅ 合格</span>';
+                else if(fail) resultHtml = '<span class="static-result-fail">❌ 異常</span>';
+                btnGroup.innerHTML = resultHtml;
+            });
+            
+            const noteInput = doc.querySelector(`#note_${pIndex}`);
+            if(noteInput) {
+                const noteVal = document.getElementById(`note_${pIndex}`).value;
+                if(noteVal) {
+                    const noteDiv = document.createElement('div');
+                    noteDiv.innerHTML = `<span class="static-label">備註:</span>${noteVal}`;
+                    noteDiv.style.marginTop = "5px";
+                    noteInput.replaceWith(noteDiv);
+                } else { noteInput.remove(); }
+            }
+        });
+        
+        // 寫入 Payload & 清理
+        const data = collectData();
+        doc.querySelector('#data-payload').textContent = JSON.stringify(data);
+        doc.querySelectorAll('.fab-container, .backup-controls, .btn-upload, script').forEach(el => { if(el.id !== 'data-payload') el.remove(); });
+
+        // 下載
+        const htmlContent = "<!DOCTYPE html>" + doc.outerHTML;
+        const blob = new Blob([htmlContent], {type: "text/html"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url;
+        const dateStr = document.getElementById('checkDate').value.replace(/[: ]/g, '_');
+        a.download = `${currentSystem}_${currentArea}_${dateStr}.html`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
     function exportBackup() {
         if (!db) return; const key = getStorageKey(); if (!key) { alert("請先選擇區域"); return; }
-        const req = db.transaction(["drafts"]).objectStore("drafts").get(key);
-        req.onsuccess = function(e) {
+        db.transaction(["drafts"]).objectStore("drafts").get(key).onsuccess = function(e) {
             const data = e.target.result; if(!data) { alert("無資料可備份"); return; }
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/json"}));
             a.download = `backup_${currentSystem}_${currentArea}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -382,52 +480,12 @@
         reader.onload = function(e) {
             try {
                 const data = JSON.parse(e.target.result); data.id = getStorageKey();
-                const tx = db.transaction(["drafts"], "readwrite"); 
-                tx.objectStore("drafts").put(data);
+                const tx = db.transaction(["drafts"], "readwrite"); tx.objectStore("drafts").put(data);
                 tx.oncomplete = function() { alert("✅ 備份讀取成功！"); loadDraftFromDB(); };
             } catch(err) { alert("讀取失敗"); }
         };
         reader.readAsText(file); input.value = '';
     }
-
-    async function generatePDF() {
-        const btn = document.getElementById('btn-generate'); btn.innerHTML = "⏳ 生成中..."; btn.disabled = true;
-        let inspectors = []; document.querySelectorAll('.inspector-check:checked').forEach(cb => { if (cb.value === 'Other') inspectors.push(document.getElementById('otherNameInput').value); else inspectors.push(cb.value); });
-        document.getElementById('printSystem').innerText = currentSystem; document.getElementById('printAreaName').innerText = currentArea;
-        document.getElementById('printDate').innerText = document.getElementById('checkDate').value; document.getElementById('printInspector').innerText = inspectors.join(", ");
-        const container = document.getElementById('printItemsContainer'); container.innerHTML = "";
-        currentItems.forEach((itemObj, pIndex) => {
-            const subItems = templates[itemObj.template] || []; let subItemsHtml = "";
-            subItems.forEach((item, sIndex) => {
-                const isPass = document.getElementById(`p${pIndex}_s${sIndex}_pass`).checked; const resultText = isPass ? "✅ 合格" : "❌ 異常"; const resultStyle = isPass ? "" : "color:red; font-weight:bold;";
-                subItemsHtml += `<div class="print-sub-item">${item.split('(')[0]} <span style="float:right; ${resultStyle}">${resultText}</span></div>`;
-            });
-            const note = document.getElementById(`note_${pIndex}`).value; const imgElement = document.getElementById(`preview_${pIndex}`);
-            container.innerHTML += `<div class="print-item-block" id="print-item-${pIndex}"><div class="print-header"><span>${pIndex + 1}. ${itemObj.name} (${itemObj.template})</span><span>結果詳情</span></div><div class="print-sub-items">${subItemsHtml}</div><div class="print-note"><strong>備註：</strong>${note || "無"}</div><div class="print-img-box"><img src="${imgElement.src}" class="print-img"></div></div>`;
-        });
-        const printArea = document.getElementById('printArea'); printArea.style.top = "0"; printArea.style.zIndex = "-1";
-        try {
-            const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = 210; const contentWidth = 190; let cursorY = 10;
-            const titleBlock = document.getElementById('printTitleBlock');
-            const canvasTitle = await html2canvas(titleBlock, { scale: 2 });
-            pdf.addImage(canvasTitle.toDataURL('image/png'), 'PNG', 10, cursorY, contentWidth, (canvasTitle.height * contentWidth) / canvasTitle.width);
-            cursorY += (canvasTitle.height * contentWidth) / canvasTitle.width + 5;
-            for (let i = 0; i < currentItems.length; i++) {
-                const itemBlock = document.getElementById(`print-item-${i}`);
-                const canvasItem = await html2canvas(itemBlock, { scale: 2 });
-                const imgHeight = (canvasItem.height * contentWidth) / canvasItem.width;
-                if (cursorY + imgHeight > 280) { pdf.addPage(); cursorY = 10; }
-                pdf.addImage(canvasItem.toDataURL('image/jpeg', 0.8), 'JPEG', 10, cursorY, contentWidth, imgHeight);
-                cursorY += imgHeight + 2;
-            }
-            const fileDate = document.getElementById('checkDate').value.replace(/[: ]/g, '_');
-            pdf.save(`${currentSystem}_${currentArea}_${fileDate}.pdf`);
-            btn.innerHTML = `📥 下載 PDF`; btn.disabled = false;
-        } catch (err) { alert("錯誤: " + err); btn.disabled = false; } finally { printArea.style.top = "-9999px"; }
-    }
-    function sendEmail() { window.location.href = `mailto:oceanchen@makalot.com.tw?subject=${encodeURIComponent(`[檢查表] ${currentSystem}-${currentArea}`)}&body=${encodeURIComponent("請詳閱附檔。")}`; }
 </script>
 </body>
-
 </html>
