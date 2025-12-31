@@ -14,7 +14,7 @@
     <style>
         body { padding: 10px; padding-bottom: 80px; background-color: #f0f2f5; font-family: "Microsoft JhengHei", sans-serif; }
         
-        /* 閱讀模式 (下載後) */
+        /* 閱讀模式 */
         body.readonly-mode { background-color: white; padding: 20px; }
         body.readonly-mode .fab-container, 
         body.readonly-mode .backup-controls, 
@@ -23,7 +23,7 @@
         body.readonly-mode .btn-check-group, 
         body.readonly-mode .form-text { display: none !important; }
         
-        /* 靜態化後的文字樣式 */
+        /* 靜態化樣式 */
         .static-text { font-weight: bold; color: #333; padding: 5px 0; }
         .static-result-pass { color: #198754; font-weight: bold; }
         .static-result-fail { color: #dc3545; font-weight: bold; }
@@ -31,7 +31,6 @@
 
         .panel-row { background: white; margin-bottom: 15px; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); border-left: 5px solid #ccc; }
         .panel-row.completed { border-left-color: #198754; } 
-        /* 驗證錯誤時的紅框樣式 */
         .panel-row.error { border-left-color: #dc3545; border: 2px solid #dc3545; background-color: #fff8f8; }
 
         .sub-item-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; border-bottom: 1px solid #f0f0f0; padding: 12px 0; }
@@ -41,8 +40,9 @@
         .badge-type { font-size: 0.75em; background-color: #6c757d; color: white; padding: 3px 8px; border-radius: 4px; margin-left: 8px; white-space: nowrap; }
         .preview-img { max-width: 100%; height: 200px; object-fit: contain; margin-top: 10px; border-radius: 8px; border: 1px solid #ddd; display: none; background-color: #f8f9fa;}
         
-        .fab-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; gap: 10px; }
-        .fab-btn { box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 50px; padding: 12px 24px; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 5px; }
+        /* 浮動按鈕區 */
+        .fab-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+        .fab-btn { box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 50px; padding: 12px 24px; font-weight: bold; font-size: 1em; display: flex; align-items: center; gap: 8px; width: fit-content; }
         
         .backup-controls { margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
         .version-tag { font-size: 0.75rem; color: #6c757d; display: block; text-align: center; margin-top: -5px; margin-bottom: 5px; }
@@ -56,14 +56,23 @@
 <body>
 
 <div class="fab-container">
-    <button type="button" class="btn btn-danger fab-btn" onclick="clearDraft()">🗑️ 清除</button>
-    <button type="button" class="btn btn-primary fab-btn" onclick="downloadReport()">📥 下載報告</button>
+    <button type="button" class="btn btn-success fab-btn" onclick="sendEmail()">
+        📧 寄給負責人
+    </button>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-danger fab-btn" onclick="clearDraft()">
+            🗑️ 清除
+        </button>
+        <button type="button" class="btn btn-primary fab-btn" onclick="downloadReport()">
+            📥 下載報告
+        </button>
+    </div>
 </div>
 
 <div class="container mb-5" style="max-width: 800px;">
     <div class="sticky-top bg-white p-3 shadow-sm mb-3 rounded app-header" style="z-index: 1000; margin: -10px -10px 10px -10px;">
         <h5 class="text-center fw-bold m-0" id="pageTitle">聚陽實業 - 自動檢查計畫總表</h5>
-        <span class="version-tag">Ver: v14</span>
+        <span class="version-tag">Ver: v14.1</span>
         <div class="progress mt-2" style="height: 6px;">
             <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
         </div>
@@ -270,7 +279,7 @@
                     const imgEl = document.getElementById(`preview_${index}`);
                     imgEl.src = dataUrl; imgEl.style.display = 'inline-block';
                     document.getElementById(`row_${index}`).classList.add("completed");
-                    document.getElementById(`row_${index}`).classList.remove('error'); // 拍照後移除紅框
+                    document.getElementById(`row_${index}`).classList.remove('error');
                     autoSave();
                 }
             }
@@ -342,17 +351,24 @@
         alert("已清除！");
     }
 
-    // === V14.0 核心：強制驗證 (勾選 + 照片) ===
+    function sendEmail() {
+        const date = document.getElementById('checkDate').value;
+        const sys = currentSystem || "未選擇";
+        const area = currentArea || "未選擇";
+        const subject = encodeURIComponent(`[檢查表] ${sys}-${area} ${date}`);
+        const body = encodeURIComponent("請詳閱附檔檢查報告 (請手動附加下載的 HTML 檔案)。");
+        window.location.href = `mailto:oceanchen@makalot.com.tw?subject=${subject}&body=${body}`;
+    }
+
+    // === V14.0 核心：強制驗證 ===
     function downloadReport() {
         if(!currentSystem || !currentArea) { alert("請先選擇系統與區域"); return; }
         
-        // 1. 驗證人員
         const inspectorNames = document.getElementById('inspectorBtn').innerText;
         if(inspectorNames === "請選擇人員..." || inspectorNames === "") {
             alert("❌ 錯誤：請至少選擇一位檢查人員！"); return;
         }
 
-        // 2. 驗證檢查項目 & 照片
         let missingCount = 0;
         let firstMissingElem = null;
         currentItems.forEach((itemObj, pIndex) => {
@@ -360,28 +376,20 @@
             let isCheckComplete = true;
             let isPhotoUploaded = false;
 
-            // 驗證勾選
             subItems.forEach((_, sIndex) => {
                 const pass = document.getElementById(`p${pIndex}_s${sIndex}_pass`);
                 const fail = document.getElementById(`p${pIndex}_s${sIndex}_fail`);
                 if (!pass.checked && !fail.checked) isCheckComplete = false;
             });
 
-            // 驗證照片 (檢查預覽圖是否顯示)
             const imgEl = document.getElementById(`preview_${pIndex}`);
-            if (imgEl && imgEl.src && imgEl.style.display !== 'none') {
-                isPhotoUploaded = true;
-            }
+            if (imgEl && imgEl.src && imgEl.style.display !== 'none') isPhotoUploaded = true;
 
             const row = document.getElementById(`row_${pIndex}`);
-            // 條件：必須 (勾選完畢) 且 (已上傳照片)
             if (!isCheckComplete || !isPhotoUploaded) {
-                row.classList.add('error'); 
-                missingCount++;
+                row.classList.add('error'); missingCount++;
                 if(!firstMissingElem) firstMissingElem = row;
-            } else { 
-                row.classList.remove('error'); 
-            }
+            } else { row.classList.remove('error'); }
         });
 
         if (missingCount > 0) {
@@ -394,16 +402,14 @@
             return;
         }
 
-        // 3. 複製 DOM
+        // 下載邏輯
         const doc = document.documentElement.cloneNode(true);
         const body = doc.querySelector('body');
         body.classList.add('readonly-mode');
         
-        // 移除 App Header
         const appHeader = doc.querySelector('.app-header');
         if(appHeader) appHeader.remove();
 
-        // 建立靜態標題
         const reportTitleDiv = document.createElement('div');
         reportTitleDiv.className = 'report-header';
         reportTitleDiv.innerHTML = `
@@ -412,19 +418,16 @@
         `;
         doc.querySelector('.container').prepend(reportTitleDiv);
 
-        // 靜態化：系統/區域
         const sysVal = document.getElementById('systemSelect').value;
         const areaVal = document.getElementById('areaSelect').value;
         doc.querySelector('#div-system').innerHTML = `<span class="static-label">系統:</span><span class="static-text">${sysVal}</span>`;
         doc.querySelector('#div-area').innerHTML = `<span class="static-label">區域:</span><span class="static-text">${areaVal}</span>`;
         
-        // 靜態化：日期/人員
         const dateVal = document.getElementById('checkDate').value;
         doc.querySelector('#div-date').innerHTML = `<span class="static-label">日期:</span><span class="static-text">${dateVal}</span>`;
         doc.querySelector('#div-inspector').innerHTML = `<span class="static-label">人員:</span><span class="static-text">${inspectorNames}</span>`;
         doc.querySelector('#inspectorModal').remove();
 
-        // 靜態化：檢查結果
         currentItems.forEach((itemObj, pIndex) => {
             const subItems = templates[itemObj.template] || [];
             subItems.forEach((_, sIndex) => {
@@ -450,12 +453,10 @@
             }
         });
         
-        // 寫入 Payload & 清理
         const data = collectData();
         doc.querySelector('#data-payload').textContent = JSON.stringify(data);
         doc.querySelectorAll('.fab-container, .backup-controls, .btn-upload, script').forEach(el => { if(el.id !== 'data-payload') el.remove(); });
 
-        // 下載
         const htmlContent = "<!DOCTYPE html>" + doc.outerHTML;
         const blob = new Blob([htmlContent], {type: "text/html"});
         const url = URL.createObjectURL(blob);
