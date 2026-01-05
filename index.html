@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>聚陽實業 - 自動檢查計畫總表</title>
-    
+    <link rel="icon" href="icon-192.png" type="image/png">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0d6efd">
     <link rel="apple-touch-icon" href="icon.png">
@@ -13,26 +13,64 @@
     
     <style>
         /* === 全局基礎樣式 === */
-        body { padding: 10px; padding-bottom: 120px; background-color: #f0f2f5; font-family: -apple-system, "Microsoft JhengHei", sans-serif; color: #333; }
+        body { 
+            padding: 15px; 
+            padding-bottom: 120px; 
+            background-color: #f0f2f5; 
+            font-family: -apple-system, "Microsoft JhengHei", sans-serif; 
+            color: #333; 
+        }
         
         /* === 1. 操作介面 (App Mode) === */
         .container { max-width: 800px; margin: 0 auto; }
         
         /* 卡片與區塊 */
-        .card-box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-box { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            margin-bottom: 20px; 
+        }
         
+        /* App Header */
+        .app-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .app-meta {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        .app-status {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #0288d1;
+            font-size: 1.1rem;
+        }
+        
+        /* 區塊標題 (App用) */
         .section-title { 
-            font-size: 1.1rem; font-weight: bold; color: #0288d1; 
-            border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; 
+            font-size: 1.2rem; font-weight: bold; color: #0288d1; 
+            margin-bottom: 20px;
         }
 
         /* 輸入欄位 */
         label { font-weight: bold; color: #555; margin-bottom: 5px; display: block; }
         select, input[type="text"], .btn-select { 
-            width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; 
-            font-size: 16px; margin-bottom: 15px; background: #fff; display: block;
+            width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 8px; 
+            font-size: 16px; margin-bottom: 18px; background: #fff; display: block;
+            box-sizing: border-box;
         }
-        .btn-select { text-align: left; background-color: #fff; color: #333; }
+        .btn-select { text-align: left; background-color: #fff; color: #333; cursor: pointer; }
 
         /* 檢查項目卡片 */
         .panel-row { 
@@ -47,7 +85,7 @@
         .badge-temp { font-size: 0.75rem; background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; }
 
         /* 細項檢查列 */
-        .sub-item-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee; }
+        .sub-item-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px dashed #eee; }
         .sub-item-row:last-child { border-bottom: none; }
         .sub-item-label { font-size: 0.95rem; }
 
@@ -55,7 +93,7 @@
         .btn-check-group { display: flex; gap: 5px; }
         .btn-check-group input { display: none; }
         .btn-check-label { 
-            padding: 8px 15px; border: 1px solid #ced4da; border-radius: 4px; cursor: pointer; 
+            padding: 8px 15px; border: 1px solid #ced4da; border-radius: 6px; cursor: pointer; 
             font-size: 0.95rem; color: #666; background: #fff; transition: 0.2s;
         }
         .btn-check-pass:checked + label { background: #198754; color: white; border-color: #198754; }
@@ -65,49 +103,61 @@
         .preview-container { text-align: center; margin-top: 10px; }
         .preview-img { max-width: 100%; height: 200px; object-fit: contain; border-radius: 8px; border: 1px solid #ddd; display: none; }
 
-        /* ★★★ 簽名板 (修正CSS) ★★★ */
+        /* 簽名板 */
         .sig-wrapper { 
             position: relative; width: 100%; height: 180px; 
             border: 2px dashed #ccc; border-radius: 8px; background: #fff;
-            touch-action: none; /* 關鍵：防止手機滑動時捲動頁面 */
+            touch-action: none;
         }
         canvas { width: 100%; height: 100%; cursor: crosshair; display: block; }
         .sig-error { border-color: #dc3545; background: #fff5f5; }
 
         /* FAB 懸浮按鈕 */
-        .fab-container { position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; }
+        .fab-container { position: fixed; bottom: 25px; right: 25px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; align-items: flex-end; }
         .btn-float { 
-            display: flex; align-items: center; justify-content: center; padding: 12px 20px; 
+            display: flex; align-items: center; justify-content: center; padding: 10px 20px; 
             border-radius: 50px; color: white; font-weight: bold; border: none; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; min-width: 140px; transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; min-width: 130px; transition: 0.2s;
+            font-size: 0.95rem;
         }
         .btn-float:active { transform: scale(0.95); }
-        .btn-main { background: linear-gradient(135deg, #0288d1, #03a9f4); }
+        .btn-main { background: linear-gradient(135deg, #0288d1, #03a9f4); min-width: 150px; font-size: 1rem; }
         .btn-sub { background: linear-gradient(135deg, #27ae60, #2ecc71); }
-        .btn-warn { background: linear-gradient(135deg, #c0392b, #e74c3c); font-size: 0.9rem; }
+        .btn-warn { background: linear-gradient(135deg, #c0392b, #e74c3c); font-size: 0.9rem; min-width: 110px; }
+        .btn-gray { background: linear-gradient(135deg, #6c757d, #7f8c8d); font-size: 0.85rem; min-width: 110px; }
 
         /* === 2. 報告樣式 (下載後生效) === */
         .report-body { background: white !important; padding: 40px !important; max-width: 900px !important; margin: 0 auto !important; }
         
-        .report-header { text-align: center; border-bottom: 3px solid #0288d1; margin-bottom: 25px; padding-bottom: 15px; }
+        /* 報告表頭 (新格式：藍線在下) */
+        .report-header { text-align: center; border-bottom: 3px solid #0288d1; margin-bottom: 15px; padding-bottom: 15px; }
         .report-title { font-size: 1.8rem; font-weight: 900; color: #000; margin: 0; }
-        .report-info-bar { background: #f8f9fa; border-left: 5px solid #0288d1; padding: 10px 15px; margin-bottom: 30px; font-weight: bold; color: #333; font-size: 1.05rem; }
+        
+        /* 報告基本資料 (單行顯示) */
+        .report-info-simple { 
+            font-size: 1.1rem; font-weight: bold; color: #000; margin-bottom: 30px; 
+            text-align: left;
+        }
 
-        /* 報告內容區塊 (維持舊版的大圖風格) */
+        /* 報告區塊標題 (無背景，左側藍條) */
+        .report-section-title { 
+            color: #0288d1; font-size: 1.2rem; font-weight: bold; margin-top: 30px; margin-bottom: 10px;
+            border-left: 5px solid #0288d1; padding-left: 10px;
+        }
+
+        /* 報告內容區塊 */
         .report-item { border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; }
         .report-item-head { background: #f1f3f5; padding: 8px 12px; font-weight: bold; font-size: 1.1rem; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-between; }
         .report-sub-items { margin-bottom: 10px; padding-left: 10px; }
         .report-sub-item { margin-bottom: 4px; font-size: 0.95rem; }
         .report-note { color: #666; font-style: italic; margin-bottom: 10px; padding: 5px; background: #fffbe6; border-radius: 4px; display: inline-block; }
-        
-        /* 報告圖片 (大尺寸) */
         .report-img-large { max-height: 350px; max-width: 100%; border: 1px solid #ccc; padding: 2px; border-radius: 4px; display: block; margin: 5px 0; }
-
         .txt-pass { color: #198754; font-weight: bold; }
         .txt-fail { color: #dc3545; font-weight: bold; }
 
-        /* 報告簽名區 (新式雙欄) */
-        .report-footer { margin-top: 50px; display: flex; gap: 50px; page-break-inside: avoid; }
+        /* 統計與簽名 */
+        .report-summary { margin-top: 20px; font-size: 1.1rem; font-weight: bold; border-top: 2px solid #eee; padding-top: 15px; }
+        .report-footer { margin-top: 40px; display: flex; gap: 50px; page-break-inside: avoid; }
         .sig-box { flex: 1; }
         .sig-line { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; text-align: center; }
         .sig-img-final { height: 60px; display: block; margin: 0 auto; }
@@ -117,28 +167,26 @@
 <body>
 
 <div class="fab-container">
+    <button type="button" class="btn-float btn-gray" onclick="exportBackup()">💾 下載備份</button>
+    <button type="button" class="btn-float btn-gray" onclick="document.getElementById('importFile').click()">📂 讀取備份</button>
     <button type="button" class="btn-float btn-sub" onclick="sendEmail()">📧 寄給負責人</button>
     <button type="button" class="btn-float btn-main" onclick="downloadReport()">📥 下載報告</button>
     <button type="button" class="btn-float btn-warn" onclick="clearDraft()">🗑️ 清除重填</button>
 </div>
 
+<input type="file" id="importFile" accept=".json" style="display: none;" onchange="importBackup(this)">
+
 <div class="container">
-    
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h3 style="color:#0288d1; font-weight:bold; margin-bottom:5px;">聚陽實業 - 自動檢查計畫總表</h3>
-        <div style="color:#888; font-size:0.8rem;">Ver: 19</div>
-        <div id="pageTitle" style="font-weight:bold; margin-top:5px; font-size:1.1rem; color:#555;">請選擇系統...</div>
-        <small id="autoSaveStatus" style="color:green; display:none;">✅ 已自動儲存</small>
-    </div>
-
-    <div style="background:#e9ecef; padding:8px; border-radius:6px; margin-bottom:15px; display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn btn-sm btn-outline-secondary" onclick="exportBackup()">📂 下載備份</button>
-        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('importFile').click()">📂 讀取備份</button>
-        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importBackup(this)">
-    </div>
-
     <form id="checkForm">
+        
         <div class="card-box">
+            <div class="app-header">
+                <div class="app-title">聚陽實業 - 自動檢查計畫總表</div>
+                <div class="app-meta">Ver: 21</div>
+                <div id="pageTitle" class="app-status">請選擇系統...</div>
+                <small id="autoSaveStatus" style="color:green; display:none;">✅ 已自動儲存</small>
+            </div>
+
             <div class="section-title">1. 基本資料</div>
             
             <label>系統 System</label>
@@ -162,14 +210,14 @@
                 </div>
             </div>
 
-            <div id="inspectorModal" style="display:none; background:#f8f9fa; padding:10px; border:1px solid #ddd; border-radius:6px; margin-top:5px;">
+            <div id="inspectorModal" style="display:none; background:#f8f9fa; padding:15px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
                 <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                    <label style="font-weight:normal; background:white; padding:5px 10px; border:1px solid #ccc; border-radius:4px;"><input type="checkbox" class="inspector-check" value="Albert" onchange="autoSave(); updateInspectorBtn()"> Albert</label><label style="font-weight:normal; background:white; padding:5px 10px; border:1px solid #ccc; border-radius:4px;"><input type="checkbox" class="inspector-check" value="Alden" onchange="autoSave(); updateInspectorBtn()"> Alden</label><label style="font-weight:normal; background:white; padding:5px 10px; border:1px solid #ccc; border-radius:4px;"><input type="checkbox" class="inspector-check" value="Ocean" onchange="autoSave(); updateInspectorBtn()"> Ocean</label><label style="font-weight:normal; background:white; padding:5px 10px; border:1px solid #ccc; border-radius:4px;"><input type="checkbox" class="inspector-check" value="Stenfer" onchange="autoSave(); updateInspectorBtn()"> Stenfer</label>
-                    <label style="font-weight:normal; background:white; padding:5px 10px; border:1px solid #ccc; border-radius:4px;">
+                    <label style="font-weight:normal; background:white; padding:8px 12px; border:1px solid #ccc; border-radius:6px; display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" class="inspector-check" value="Albert" onchange="autoSave(); updateInspectorBtn()"> Albert</label><label style="font-weight:normal; background:white; padding:8px 12px; border:1px solid #ccc; border-radius:6px; display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" class="inspector-check" value="Alden" onchange="autoSave(); updateInspectorBtn()"> Alden</label><label style="font-weight:normal; background:white; padding:8px 12px; border:1px solid #ccc; border-radius:6px; display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" class="inspector-check" value="Ocean" onchange="autoSave(); updateInspectorBtn()"> Ocean</label><label style="font-weight:normal; background:white; padding:8px 12px; border:1px solid #ccc; border-radius:6px; display:flex; align-items:center; gap:5px; cursor:pointer;"><input type="checkbox" class="inspector-check" value="Stenfer" onchange="autoSave(); updateInspectorBtn()"> Stenfer</label>
+                    <label style="font-weight:normal; background:white; padding:8px 12px; border:1px solid #ccc; border-radius:6px; display:flex; align-items:center; gap:5px; cursor:pointer;">
                         <input type="checkbox" class="inspector-check" value="Other" id="inspOther" onchange="toggleOtherInput(); autoSave();"> Other
                     </label>
                 </div>
-                <input type="text" id="otherNameInput" placeholder="輸入姓名..." style="display:none; margin-top:10px;" oninput="autoSave(); updateInspectorBtn()">
+                <input type="text" id="otherNameInput" placeholder="輸入姓名..." style="display:none; margin-top:15px;" oninput="autoSave(); updateInspectorBtn()">
             </div>
         </div>
 
@@ -180,7 +228,7 @@
             <div class="sig-wrapper" id="sig-container">
                 <canvas id="sig-canvas"></canvas>
             </div>
-            <button type="button" style="margin-top:10px; background:#eee; border:none; padding:8px 15px; border-radius:15px; cursor:pointer;" onclick="clearSignature()">↺ 清除重簽</button>
+            <button type="button" style="margin-top:15px; background:#f0f0f0; border:none; padding:8px 15px; border-radius:20px; cursor:pointer; color:#555; font-weight:bold;" onclick="clearSignature()">↺ 清除重簽</button>
         </div>
     </form>
 </div>
@@ -200,104 +248,60 @@
     let currentSystem = "", currentArea = "", currentItems = [];
     
     // IndexedDB Setup
-    const DB_NAME = "ChecklistDB_V19"; const DB_VERSION = 1; let db;
+    const DB_NAME = "ChecklistDB_V21"; const DB_VERSION = 1; let db;
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (e) => { db = e.target.result; if(!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts", { keyPath: "id" }); };
     request.onsuccess = (e) => { db = e.target.result; initPage(); };
 
-    // ===============================================
-    // ★★★ 簽名板核心修復 (High DPI + Touch) ★★★
-    // ===============================================
+    // 簽名板
     const canvas = document.getElementById('sig-canvas');
     const ctx = canvas.getContext('2d');
     let isDrawing = false;
 
-    // 重新計算 Canvas 尺寸 (包含 Retina 螢幕支援)
     function resizeCanvas() {
         const wrapper = canvas.parentElement;
         const rect = wrapper.getBoundingClientRect();
         const ratio = Math.max(window.devicePixelRatio || 1, 1);
-        
         canvas.width = rect.width * ratio;
         canvas.height = rect.height * ratio;
         ctx.scale(ratio, ratio);
-        
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#000';
     }
-    // 延遲執行以確保 DOM 渲染完畢
     window.addEventListener('resize', resizeCanvas);
-    setTimeout(resizeCanvas, 500);
 
-    // 取得正確座標
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return { 
-            x: clientX - rect.left, 
-            y: clientY - rect.top 
-        };
+        return { x: clientX - rect.left, y: clientY - rect.top };
     }
 
     function startDraw(e) { 
-        // 阻止默認滾動行為
         if(e.target === canvas) e.preventDefault();
-        isDrawing = true; 
-        const pos = getPos(e);
-        ctx.beginPath(); 
-        ctx.moveTo(pos.x, pos.y); 
+        isDrawing = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); 
     }
-
     function draw(e) { 
         if (!isDrawing) return; 
         if(e.target === canvas) e.preventDefault();
-        const pos = getPos(e);
-        ctx.lineTo(pos.x, pos.y); 
-        ctx.stroke(); 
+        const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); 
     }
-
-    function stopDraw() { 
-        if(isDrawing) { 
-            isDrawing = false; 
-            autoSave(); 
-        } 
-    }
+    function stopDraw() { if(isDrawing) { isDrawing = false; autoSave(); } }
     
-    // 綁定完整事件 (支援滑鼠與觸控)
-    canvas.addEventListener('mousedown', startDraw); 
-    canvas.addEventListener('mousemove', draw); 
-    canvas.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('mouseout', stopDraw);
-    
+    canvas.addEventListener('mousedown', startDraw); canvas.addEventListener('mousemove', draw); 
+    canvas.addEventListener('mouseup', stopDraw); canvas.addEventListener('mouseout', stopDraw);
     canvas.addEventListener('touchstart', startDraw, {passive:false}); 
     canvas.addEventListener('touchmove', draw, {passive:false}); 
     canvas.addEventListener('touchend', stopDraw);
     
-    function clearSignature() { 
-        ctx.clearRect(0, 0, canvas.width, canvas.height); 
-        autoSave(); 
-    }
-    
-    function isCanvasBlank() { 
-        const blank = document.createElement('canvas'); 
-        blank.width = canvas.width; 
-        blank.height = canvas.height; 
-        return canvas.toDataURL() === blank.toDataURL(); 
-    }
+    function clearSignature() { ctx.clearRect(0, 0, canvas.width, canvas.height); autoSave(); }
+    function isCanvasBlank() { const blank = document.createElement('canvas'); blank.width = canvas.width; blank.height = canvas.height; return canvas.toDataURL() === blank.toDataURL(); }
 
-    // ===============================================
-    // 應用程式邏輯
-    // ===============================================
+    // 頁面邏輯
     function initPage() {
         const now = new Date();
         document.getElementById('checkDate').value = now.toISOString().split('T')[0];
-        
         const sysSelect = document.getElementById('systemSelect');
         Object.keys(allData).forEach(sys => { sysSelect.add(new Option(sys, sys)); });
-        
         const savedSys = localStorage.getItem('last_system');
         if(savedSys && allData[savedSys]) {
             sysSelect.value = savedSys; changeSystem();
@@ -330,7 +334,7 @@
         localStorage.setItem('last_area', currentArea);
         renderPanels(); 
         document.getElementById('sig-section').style.display = 'block';
-        setTimeout(resizeCanvas, 100); // 確保顯示後重繪
+        setTimeout(resizeCanvas, 100); 
         loadDraftFromDB();
     }
 
@@ -390,7 +394,7 @@
         }
     }
 
-    // 自動存檔 & 讀取
+    // 儲存邏輯
     function getStorageKey() { return (currentSystem && currentArea) ? `${document.title}_${currentSystem}_${currentArea}` : null; }
     let saveTimer; function autoSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveToDB, 500); }
     
@@ -412,8 +416,7 @@
     function loadDraftFromDB() {
         if(!db || !getStorageKey()) return;
         db.transaction(["drafts"]).objectStore("drafts").get(getStorageKey()).onsuccess = (e) => {
-            const data = e.target.result;
-            if(!data) return;
+            const data = e.target.result; if(!data) return;
             if(data.radios) data.radios.forEach(id => { const el = document.getElementById(id); if(el) el.checked = true; });
             if(data.notes) Object.keys(data.notes).forEach(k => { const el = document.getElementById(k); if(el) el.value = data.notes[k]; });
             if(data.images) Object.keys(data.images).forEach(k => { 
@@ -421,13 +424,10 @@
                 if(img) { img.src = data.images[k]; img.style.display = 'inline-block'; } 
             });
             if(data.inspectorText) document.getElementById('inspectorBtn').innerText = data.inspectorText;
-            if(data.signature) { 
-                const i = new Image(); i.src = data.signature; 
-                i.onload = () => ctx.drawImage(i,0,0, canvas.width, canvas.height); 
-            }
+            if(data.signature) { const i = new Image(); i.src = data.signature; i.onload = () => ctx.drawImage(i,0,0, canvas.width, canvas.height); }
         };
     }
-    
+
     function exportBackup() {
         if (!db) return; const key = getStorageKey(); if (!key) { alert("請先選擇區域"); return; }
         db.transaction(["drafts"]).objectStore("drafts").get(key).onsuccess = function(e) {
@@ -458,14 +458,13 @@
     }
 
     // ===============================================
-    // 下載報告 (強制檢查照片)
+    // ★★★ 下載報告 (格式修正：單行資訊列) ★★★
     // ===============================================
     function downloadReport() {
         if(!currentSystem || !currentArea) { alert("請選擇區域"); return; }
         const inspectorNames = document.getElementById('inspectorBtn').innerText;
         if(inspectorNames.includes("請選擇")) { alert("請選擇檢查人員"); return; }
         
-        // 1. 強制檢查 (細項與照片)
         if(isCanvasBlank()) {
             alert("❌ 請簽名！");
             document.getElementById('sig-canvas').classList.add('sig-error');
@@ -473,9 +472,7 @@
             return;
         }
         
-        let errorCount = 0;
-        let firstError = null;
-
+        let errorCount = 0; let firstError = null;
         currentItems.forEach((item, idx) => {
             const subItems = templates[item.template] || [];
             let isCheckOK = true;
@@ -483,50 +480,40 @@
                 if(!document.getElementById(`p${idx}_s${sIdx}_pass`).checked && 
                    !document.getElementById(`p${idx}_s${sIdx}_fail`).checked) isCheckOK = false;
             });
-            
             const img = document.getElementById(`preview_${idx}`);
             const hasPhoto = (img && img.src && img.style.display !== 'none');
-
             const row = document.getElementById(`row_${idx}`);
-            if(!isCheckOK || !hasPhoto) {
-                row.classList.add('error');
-                errorCount++;
-                if(!firstError) firstError = row;
-            } else {
-                row.classList.remove('error');
-            }
+            if(!isCheckOK || !hasPhoto) { row.classList.add('error'); errorCount++; if(!firstError) firstError = row; } 
+            else { row.classList.remove('error'); }
         });
 
         if(errorCount > 0) {
-            alert(`❌ 尚有 ${errorCount} 個項目未完成！
-
-規定：
-1. 所有細項需勾選
-2. 每個項目「必須」拍攝照片`);
+            alert(`❌ 尚有 ${errorCount} 個項目未完成！(需勾選細項 + 拍攝照片)`);
             firstError.scrollIntoView({behavior:'smooth', block:'center'});
             return;
         }
 
-        // 2. 建立報告 (新頭尾 + 舊大圖)
+        // 生成報告內容
         let reportContent = "";
-        
+        let failCount = 0;
+
         currentItems.forEach((item, idx) => {
             const subItems = templates[item.template] || [];
-            let subHtml = "";
-            let isFail = false;
-            
+            let subHtml = ""; let isFail = false;
             subItems.forEach((sub, sIdx) => {
                 const isPass = document.getElementById(`p${idx}_s${sIdx}_pass`).checked;
                 const status = isPass ? '<span class="txt-pass">✔ 合格</span>' : '<span class="txt-fail">✘ 異常</span>';
                 if(!isPass) isFail = true;
                 subHtml += `<div class="report-sub-item">• ${sub} : ${status}</div>`;
             });
+            
+            if(isFail) failCount++;
 
             const noteVal = document.getElementById(`note_${idx}`).value;
             const noteHtml = noteVal ? `<div class="report-note">備註：${noteVal}</div>` : "";
             const imgEl = document.getElementById(`preview_${idx}`);
             const imgHtml = `<img src="${imgEl.src}" class="report-img-large">`;
-
+            
             reportContent += `
             <div class="report-item" style="${isFail ? 'border-color:red; background:#fff5f5;' : ''}">
                 <div class="report-item-head">
@@ -539,39 +526,34 @@
             </div>`;
         });
 
+        // 組合完整 HTML (單行資訊 + 新版樣式)
         const doc = document.implementation.createHTMLDocument(document.title);
-        doc.head.innerHTML = document.head.innerHTML; 
-        doc.body.className = "report-body";
+        doc.head.innerHTML = document.head.innerHTML; doc.body.className = "report-body";
         doc.body.innerHTML = `
             <div class="report-header">
                 <div class="report-title">${document.title}</div>
             </div>
             
-            <div class="report-info-bar">
+            <div class="report-info-simple">
                 人員：${inspectorNames} &nbsp;|&nbsp; 
                 系統：${currentSystem} - ${currentArea} &nbsp;|&nbsp; 
                 日期：${document.getElementById('checkDate').value}
             </div>
 
-            <div class="report-content">
-                ${reportContent}
+            <div class="report-section-title">檢查結果</div>
+            <div class="report-content">${reportContent}</div>
+            
+            <div class="report-summary">
+                結果統計：${failCount > 0 ? '<span style="color:red">異常 (' + failCount + ')</span>' : '<span style="color:green">全數合格</span>'}
             </div>
 
             <div class="report-footer">
-                <div class="sig-box">
-                    <div class="sig-img-final"><img src="${canvas.toDataURL()}" style="height:60px;"></div>
-                    <div class="sig-line">檢查人員簽章</div>
-                </div>
-                <div class="sig-box">
-                    <div class="sig-placeholder">(請簽核)</div>
-                    <div class="sig-line">部門主管複核</div>
-                </div>
-            </div>
-        `;
-
+                <div class="sig-box"><div class="sig-img-final"><img src="${canvas.toDataURL()}" style="height:60px;"></div><div class="sig-line">檢查人員簽章</div></div>
+                <div class="sig-box"><div class="sig-placeholder">(請簽核)</div><div class="sig-line">部門主管複核</div></div>
+            </div>`;
+            
         const blob = new Blob(["<!DOCTYPE html>"+doc.documentElement.outerHTML], {type: "text/html"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = `檢查報告_${currentSystem}_${currentArea}.html`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
@@ -582,7 +564,6 @@
         location.href = `mailto:oceanchen@makalot.com.tw?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
 
-    // iOS Safari Check
     window.addEventListener('load', () => {
        if (("standalone" in window.navigator) && window.navigator.standalone) { document.body.style.paddingTop = "40px"; }
     });
