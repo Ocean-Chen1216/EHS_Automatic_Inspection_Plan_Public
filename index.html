@@ -26,6 +26,7 @@
         
         /* 卡片與區塊 */
         .card-box { 
+            position: relative; /* 為了定位版本號 */
             background: white; 
             padding: 25px; 
             border-radius: 12px; 
@@ -33,28 +34,37 @@
             margin-bottom: 20px; 
         }
         
+        /* 版本號 (右上角) */
+        .version-tag {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 0.8rem;
+            color: #aaa;
+            font-family: sans-serif;
+        }
+        
         /* App Header */
         .app-header {
             text-align: center;
             margin-bottom: 25px;
-            padding-bottom: 15px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #f0f0f0;
+            padding-top: 10px; /* 避免標題太貼頂 */
         }
         .app-title {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 900;
             color: #2c3e50;
             margin-bottom: 5px;
         }
-        .app-meta {
-            font-size: 0.85rem;
-            color: #888;
-        }
+        /* 動態狀態文字 (選完系統才顯示) */
         .app-status {
-            margin-top: 10px;
+            margin-top: 5px;
             font-weight: bold;
             color: #0288d1;
             font-size: 1.1rem;
+            min-height: 1.2rem; /* 預留高度避免跳動，或設為0隱藏 */
         }
         
         /* 區塊標題 (App用) */
@@ -129,7 +139,7 @@
         /* === 2. 報告樣式 (下載後生效) === */
         .report-body { background: white !important; padding: 40px !important; max-width: 900px !important; margin: 0 auto !important; }
         
-        /* 報告表頭 (新格式：藍線在下) */
+        /* 報告表頭 (藍線在下) */
         .report-header { text-align: center; border-bottom: 3px solid #0288d1; margin-bottom: 15px; padding-bottom: 15px; }
         .report-title { font-size: 1.8rem; font-weight: 900; color: #000; margin: 0; }
         
@@ -139,7 +149,7 @@
             text-align: left;
         }
 
-        /* 報告區塊標題 (無背景，左側藍條) */
+        /* 報告區塊標題 */
         .report-section-title { 
             color: #0288d1; font-size: 1.2rem; font-weight: bold; margin-top: 30px; margin-bottom: 10px;
             border-left: 5px solid #0288d1; padding-left: 10px;
@@ -180,10 +190,11 @@
     <form id="checkForm">
         
         <div class="card-box">
+            <div class="version-tag">Ver: 22</div>
+
             <div class="app-header">
                 <div class="app-title">聚陽實業 - 自動檢查計畫總表</div>
-                <div class="app-meta">Ver: 21</div>
-                <div id="pageTitle" class="app-status">請選擇系統...</div>
+                <div id="pageTitle" class="app-status"></div>
                 <small id="autoSaveStatus" style="color:green; display:none;">✅ 已自動儲存</small>
             </div>
 
@@ -248,7 +259,7 @@
     let currentSystem = "", currentArea = "", currentItems = [];
     
     // IndexedDB Setup
-    const DB_NAME = "ChecklistDB_V21"; const DB_VERSION = 1; let db;
+    const DB_NAME = "ChecklistDB_V22"; const DB_VERSION = 1; let db;
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (e) => { db = e.target.result; if(!db.objectStoreNames.contains("drafts")) db.createObjectStore("drafts", { keyPath: "id" }); };
     request.onsuccess = (e) => { db = e.target.result; initPage(); };
@@ -325,6 +336,8 @@
         Object.keys(allData[currentSystem]).forEach(area => areaSelect.add(new Option(area, area)));
         document.getElementById('panelList').innerHTML = ""; currentItems = []; document.getElementById('sig-section').style.display = 'none';
         localStorage.setItem('last_system', currentSystem);
+        // 重置標題文字
+        document.getElementById('pageTitle').innerText = ""; 
     }
 
     function changeArea() {
@@ -458,7 +471,7 @@
     }
 
     // ===============================================
-    // ★★★ 下載報告 (格式修正：單行資訊列) ★★★
+    // ★★★ 下載報告 (單行資訊 + 格式修正) ★★★
     // ===============================================
     function downloadReport() {
         if(!currentSystem || !currentArea) { alert("請選擇區域"); return; }
@@ -526,7 +539,7 @@
             </div>`;
         });
 
-        // 組合完整 HTML (單行資訊 + 新版樣式)
+        // 組合完整 HTML (單行資訊 + 乾淨版面)
         const doc = document.implementation.createHTMLDocument(document.title);
         doc.head.innerHTML = document.head.innerHTML; doc.body.className = "report-body";
         doc.body.innerHTML = `
